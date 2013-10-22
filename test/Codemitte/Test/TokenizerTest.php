@@ -20,7 +20,7 @@ class TokenizerTest extends \PHPUnit_Framework_TestCase
 {
     public function newParser()
     {
-        return new Parser(new Tokenizer(new EventDispatcher()), new ArrayQueryCache());
+        return new Parser(new Tokenizer(new EventDispatcher()), new MemCache());
     }
 
     /**
@@ -72,13 +72,13 @@ WITH DATA CATEGORY Geography__c ABOVE usa__c AND
 
         $renderer = new Renderer();
 
-        print_r($renderer->render($ast, array(
+        $renderer->render($ast, array(
             'pomsg' => 'Dingsda',
             'pong' => new Currency(1000.03, 'CNG'),
             'pung' => new \DateTime('now'),
             'b' => 124.4,
             'pungpung' => array('dings', 'bums', 'woing')
-        )));
+        ));
     }
 
     /**
@@ -86,9 +86,8 @@ WITH DATA CATEGORY Geography__c ABOVE usa__c AND
      */
     public function testPositive1()
     {
-        return;
         $tokenizer = new Tokenizer(new EventDispatcher());
-        $parser = new Parser($tokenizer, new MemCache());
+        $parser = $this->newParser();
 
         $parser->parse(
             "SELECT hour_in_day(convertTimezone(dingsda)), dings, COUNT(hanswurst) AS nn,
@@ -136,7 +135,6 @@ WITH DATA CATEGORY Geography__c ABOVE usa__c AND
      */
     public function testArbitraryQueries()
     {
-        return;
         $this->newParser()->parse("SELECT Id, Name
             FROM Account
             WHERE Name = 'Sandy'");

@@ -1,6 +1,6 @@
 {
-    "name": "codemitte/soql-tokenizier",
-    "description": "Tokenizer for salesforce SOQL queries",
+    "name": "codemitte/soql-parser",
+    "description": "Tokenizer, parser and builder for salesforce SOQL queries",
     "type": "library",
     "keywords": [
         "salesforce",
@@ -17,11 +17,16 @@
         }
     ],
     'require' : {
+        'php' : '>=5.3.6',
         'symfony/event-dispatcher' : '2.3.*'
     },
     'require-dev' : {
+        'ext-xdebug' : '>=2.2.3,<2.3',
         'phpunit/phpunit' : '3.7.*',
         'symfony/stopwatch' : '2.3.*'
+    },
+    'recommend' : {
+        'ext-memcache' : '>=3.0.8, <3.1'
     },
     'autoload': {
         'psr-0': {

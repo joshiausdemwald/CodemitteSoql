@@ -742,6 +742,7 @@ class Tokenizer implements TokenizerInterface
         {
             $this->name = 'OPERATOR';
             $this->type = 'T_OPERATOR';
+            $this->value = $uppercaseValue;
         }
 
         elseif(in_array($uppercaseValue, self::$DATE_LITERALS) || preg_match($dynamicDateLiteralPattern, $uppercaseValue))
