@@ -14,18 +14,21 @@ use Codemitte\ForceToolkit\Soql\Parser;
 use Codemitte\ForceToolkit\Soql\Renderer\Renderer;
 use Codemitte\ForceToolkit\Soql\TokenDefinition;
 use Codemitte\ForceToolkit\Soql\Tokenizer;
+use Monolog\Logger;
+use Phpforce\Metadata\Cache\CacheWarmer;
+use Phpforce\Metadata\Cache\Memcache AS MetadataMemcache;
+use Phpforce\SoapClient\ClientBuilder;
+use Phpforce\SoapClient\Result\SObject;
+use Phpforce\SoapClient\Soap\WSDL\Wsdl;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class TokenizerTest extends \PHPUnit_Framework_TestCase
 {
     public function newParser()
     {
-        return new Parser(new Tokenizer(new EventDispatcher()), new MemCache());
+        return new Parser(new Tokenizer(new EventDispatcher()), new ArrayQueryCache());
     }
 
-    /**
-     * @test
-     */
     public function testRenderer()
     {
         $ast = $this->newParser()->parse(
@@ -81,9 +84,6 @@ WITH DATA CATEGORY Geography__c ABOVE usa__c AND
         ));
     }
 
-    /**
-     * @test
-     */
     public function testPositive1()
     {
         $tokenizer = new Tokenizer(new EventDispatcher());
@@ -130,9 +130,6 @@ WITH DATA CATEGORY Geography__c ABOVE usa__c AND
         );
     }
 
-    /**
-     * @test
-     */
     public function testArbitraryQueries()
     {
         $this->newParser()->parse("SELECT Id, Name
@@ -542,5 +539,35 @@ WHERE Amount > USD5000");
 FROM Opportunity
 GROUP BY Name
 HAVING MAX(Amount) > 10000");
+    }
+
+    public function testClientPositive1()
+    {
+        $builder = new ClientBuilder(
+            $wsdl = new Wsdl(__DIR__ . '/../../../fixtures/partner.wsdl.xml'),
+            '',
+            '',
+            ''
+        );
+
+        $client = $builder->build();
+
+        $accouts = $client->query('SELECT Id, name,
+        BillingStreet__c, OwnerId, Owner.Id, Owner.Name, createdDate,
+        ParentId, Parent.Name, Parent.Id, IgnoreSiretDuplicateCheck__c, TaxCode1__c,
+        (SELECT Id, FirstName FROM Contacts LIMIT 2) FROM Account LIMIT 3');
+
+        $cacheWarmer = new CacheWarmer($client, new MetadataMemcache());
+
+        $cacheWarmer->warmup();
+
+
+        foreach($accouts AS $account)
+        {
+        }
+
+        $accouts->rewind();
+
+        $acc = $accouts->current();
     }
 }
