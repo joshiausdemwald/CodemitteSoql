@@ -12,7 +12,7 @@ namespace Codemitte\ForceToolkit\Soql\AST;
 class GroupBy extends Node
 {
     /**
-     * @var array<Field>
+     * @var Field[]
      */
     public $fields = array();
 
@@ -22,7 +22,7 @@ class GroupBy extends Node
     public $type = null;
 
     /**
-     * @param array<Field> $fields
+     * @param Field[] $fields
      * @param null|string $type
      */
     public function __construct(array $fields = array(), $type = null)

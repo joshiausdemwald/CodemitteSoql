@@ -17,12 +17,12 @@ class Typeof extends Node
     public $fieldname;
 
     /**
-     * @var array<TypeofCondition>
+     * @var TypeofCondition[]
      */
     public $whens = array();
 
     /**
-     * @var array<Field>
+     * @var Field[]
      */
     public $else = array();
 

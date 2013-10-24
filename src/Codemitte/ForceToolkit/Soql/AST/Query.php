@@ -12,7 +12,7 @@ namespace Codemitte\ForceToolkit\Soql\AST;
 class Query extends Node
 {
     /**
-     * @var array<Typeof|Field|Subquery>
+     * @var Typeof[]|Field[]|Subquery[]
      */
     public $select = array();
 
@@ -22,7 +22,7 @@ class Query extends Node
     public $from;
 
     /**
-     * @var array<LogicalGroup>
+     * @var LogicalGroup[]
      */
     public $where;
 

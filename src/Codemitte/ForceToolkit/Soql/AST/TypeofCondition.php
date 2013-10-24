@@ -17,7 +17,7 @@ class TypeofCondition extends Node
     public $when;
 
     /**
-     * @var array<Field>
+     * @var Field[]
      */
     public $then = array();
 

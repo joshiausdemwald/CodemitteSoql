@@ -16,7 +16,7 @@ class LogicalGroup extends Node
     public $logical;
 
     /**
-     * @var array<LogicalCondition>
+     * @var LogicalCondition[]
      */
     public $conditions = array();
 

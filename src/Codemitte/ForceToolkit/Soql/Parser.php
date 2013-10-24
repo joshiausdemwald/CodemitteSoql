@@ -30,7 +30,7 @@ class Parser
     private $scope;
 
     /**
-     * @var array<FunctionDefinition>
+     * @var FunctionDefinition[]
      */
     private static $availableFunctions;
 
@@ -284,7 +284,7 @@ class Parser
     }
 
     /**
-     * @return array<Field|Query|Typeof>
+     * @return Field[]|Query[]|Typeof[]
      */
     public function parseSelectFieldList()
     {
@@ -446,7 +446,7 @@ class Parser
      * Pointer: COUNT(
      * --------------^-
      *
-     * @return array<Field|SoqlFunction>
+     * @return Field[]|SoqlFunction[]
      */
     public function parseFunctionArguments()
     {
@@ -932,7 +932,7 @@ class Parser
     }
 
     /**
-     * @return array<OrderByField>
+     * @return OrderByField[]
      */
     public function parseOrderBy()
     {

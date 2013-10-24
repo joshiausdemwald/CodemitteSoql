@@ -119,7 +119,7 @@ class Renderer
     }
 
     /**
-     * @param Field|array<Field> $fields
+     * @param Field|Field[] $fields
      */
     public function renderFields($fields = null)
     {

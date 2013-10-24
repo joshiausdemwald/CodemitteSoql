@@ -22,13 +22,13 @@ class SoqlFunction extends Node
     public $alias;
 
     /**
-     * @var array<Field|SoqlFunction>
+     * @var Field[]|SoqlFunction[]
      */
     public $arguments;
 
     /**
      * @param string $name
-     * @param array<Field|SoqlFunction> $arguments
+     * @param Field[]|SoqlFunction[] $arguments
      * @param null|Alias $alias
      * @param array $arguments
      */
