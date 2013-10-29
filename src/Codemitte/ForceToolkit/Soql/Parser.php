@@ -1,10 +1,8 @@
 <?php
 namespace Codemitte\ForceToolkit\Soql;
 
-
 use Codemitte\ForceToolkit\Soql\AST as AST;
-use Codemitte\ForceToolkit\Soql\Cache\CacheInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
+use Doctrine\Common\Cache\Cache;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 class Parser
@@ -40,15 +38,15 @@ class Parser
     private $isSubquery = false;
 
     /**
-     * @var CacheInterface
+     * @var Cache
      */
     private $cache;
 
     /**
-     * @param Tokenizer $tokenizer
-     * @param boolean $debug
+     * @param \Codemitte\ForceToolkit\Soql\TokenizerInterface $tokenizer
+     * @param Cache $cache
      */
-    public function __construct(TokenizerInterface $tokenizer, CacheInterface $cache)
+    public function __construct(TokenizerInterface $tokenizer, Cache $cache)
     {
         $this->cache = $cache;
 
@@ -94,13 +92,21 @@ class Parser
      */
     public function parse($soql)
     {
-        if(null === ($this->query = $this->cache->get($soql)))
+        $id = hash('sha1', $soql);
+
+        if($this->cache->contains($id))
+        {
+            $this->query = $this->cache->fetch($id);
+        }
+        else
         {
             $this->tokenizer->tokenize($soql);
 
             $this->tokenizer->proceedSkip();
 
-            $this->cache->set($soql, ($this->query = $this->parseQuery()));
+            $this->query = $this->parseQuery();
+
+            $this->cache->save($id, $this->query);
         }
         return $this->query;
     }

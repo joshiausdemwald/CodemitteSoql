@@ -1,5 +1,7 @@
 .idea
+phpunit.xml
 composer.phar
 vendor/*
+test/cache/*
 test/fixtures/partner.wsdl.xml
 test/fixtures/enterprise.wsdl.xml

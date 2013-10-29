@@ -5,6 +5,11 @@
          backupGlobals="false"
          verbose="true"
 >
+    <php>
+        <const name="SF_USERNAME" value="" />
+        <const name="SF_PASSWORD" value="" />
+        <const name="SF_SECURITY_TOKEN" value="" />
+    </php>
     <testsuites>
         <testsuite name="Tokenizer">
             <directory suffix="Test.php">test/Test/**</directory>
