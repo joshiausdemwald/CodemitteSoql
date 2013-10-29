@@ -1,4 +1,5 @@
 .idea
+.DS_STORE
 phpunit.xml
 composer.phar
 vendor/*
