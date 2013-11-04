@@ -1,22 +1,22 @@
 <?php
-namespace Phpforce\Query\Soql\Renderer;
+namespace Phpforce\Query\Renderer;
 
 
-use Phpforce\Query\Soql\AST\Field;
-use Phpforce\Query\Soql\AST\From;
-use Phpforce\Query\Soql\AST\GroupBy;
-use Phpforce\Query\Soql\AST\Having;
-use Phpforce\Query\Soql\AST\LogicalCondition;
-use Phpforce\Query\Soql\AST\LogicalGroup;
-use Phpforce\Query\Soql\AST\Query;
-use Phpforce\Query\Soql\AST\SoqlFunction;
-use Phpforce\Query\Soql\AST\Typeof;
-use Phpforce\Query\Soql\AST\Val;
-use Phpforce\Query\Soql\AST\Where;
-use Phpforce\Query\Soql\AST\With;
-use Phpforce\Query\Soql\Builder\Type\Currency;
-use Phpforce\Query\Soql\Builder\Type\Date;
-use Phpforce\Query\Soql\TokenDefinition;
+use Phpforce\Query\AST\Field;
+use Phpforce\Query\AST\From;
+use Phpforce\Query\AST\GroupBy;
+use Phpforce\Query\AST\Having;
+use Phpforce\Query\AST\LogicalCondition;
+use Phpforce\Query\AST\LogicalGroup;
+use Phpforce\Query\AST\Query;
+use Phpforce\Query\AST\SoqlFunction;
+use Phpforce\Query\AST\Typeof;
+use Phpforce\Query\AST\Val;
+use Phpforce\Query\AST\Where;
+use Phpforce\Query\AST\With;
+use Phpforce\Query\Builder\Type\Currency;
+use Phpforce\Query\Builder\Type\Date;
+use Phpforce\Query\TokenDefinition;
 
 class Renderer
 {

@@ -1,5 +1,5 @@
 <?php
-namespace Phpforce\Query\Soql\Builder\Type;
+namespace Phpforce\Query\Builder\Type;
 
 class Date extends \DateTime
 {

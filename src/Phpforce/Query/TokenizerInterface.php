@@ -1,5 +1,5 @@
 <?php
-namespace Phpforce\Query\Soql;
+namespace Phpforce\Query;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 

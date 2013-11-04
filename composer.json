@@ -37,8 +37,8 @@
     },
     "autoload": {
         "psr-0": {
-            "Phpforce\\Test\\Query": "test/src/",
-            "Phpforce\\Query": "src/"
+            "Phpforce\\Query": "src/",
+            "Phpforce\\Test\\Query": "test/src/"
         }
     },
     "minimum-stability": "stable"

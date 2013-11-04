@@ -1,7 +1,7 @@
 <?php
-namespace Phpforce\Query\Soql;
+namespace Phpforce\Query;
 
-use Phpforce\Query\Soql\AST as AST;
+use Phpforce\Query\AST as AST;
 use Doctrine\Common\Cache\Cache;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -43,7 +43,7 @@ class Parser
     private $cache;
 
     /**
-     * @param \Phpforce\Query\Soql\TokenizerInterface $tokenizer
+     * @param \Phpforce\Query\TokenizerInterface $tokenizer
      * @param Cache $cache
      */
     public function __construct(TokenizerInterface $tokenizer, Cache $cache)

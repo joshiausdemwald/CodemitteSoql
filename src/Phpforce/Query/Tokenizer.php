@@ -1,7 +1,7 @@
 <?php
-namespace Phpforce\Query\Soql;
+namespace Phpforce\Query;
 
-use Phpforce\Query\Soql\Event\TokenMatchEvent;
+use Phpforce\Query\Event\TokenMatchEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 

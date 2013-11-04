@@ -1,15 +1,15 @@
 <?php
 namespace Phpforce\Test\Query;
 
-use Phpforce\Query\Soql\AST\LogicalGroup;
-use Phpforce\Query\Soql\AST\Query;
-use Phpforce\Query\Soql\AST\Val;
-use Phpforce\Query\Soql\AST\Where;
-use Phpforce\Query\Soql\AST\Field;
-use Phpforce\Query\Soql\Builder\Type\Currency;
-use Phpforce\Query\Soql\Parser;
-use Phpforce\Query\Soql\Renderer\Renderer;
-use Phpforce\Query\Soql\Tokenizer;
+use Phpforce\Query\AST\LogicalGroup;
+use Phpforce\Query\AST\Query;
+use Phpforce\Query\AST\Val;
+use Phpforce\Query\AST\Where;
+use Phpforce\Query\AST\Field;
+use Phpforce\Query\Builder\Type\Currency;
+use Phpforce\Query\Parser;
+use Phpforce\Query\Renderer\Renderer;
+use Phpforce\Query\Tokenizer;
 use Doctrine\Common\Cache\FilesystemCache;
 use Monolog\Logger;
 use Phpforce\SoapClient\Metadata\CacheWarmer;

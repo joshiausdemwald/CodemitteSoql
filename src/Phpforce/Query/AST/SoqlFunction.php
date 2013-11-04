@@ -1,5 +1,5 @@
 <?php
-namespace Phpforce\Query\Soql\AST;
+namespace Phpforce\Query\AST;
 
 
 class SoqlFunction extends Node
