@@ -556,7 +556,7 @@ HAVING MAX(Amount) > 10000");
         );
 
         $client = $builder
-            ->withCache(new FilesystemCache(__DIR__ . '/../../../cache/', 'metadata'))
+            ->withCache(new FilesystemCache(__DIR__ . '/../../../../cache/', 'metadata'))
             ->withLog(new Logger('phpforce'))
             ->build()
         ;
