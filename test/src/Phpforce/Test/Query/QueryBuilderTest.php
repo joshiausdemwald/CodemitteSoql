@@ -41,6 +41,9 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         ;
     }
 
+    /**
+     * @return Renderer
+     */
     public function newRenderer()
     {
         return new Renderer();
@@ -54,8 +57,36 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         return new QueryBuilder($this->newClient(), $this->newParser(), $this->newRenderer());
     }
 
+    /**
+     * @test
+     *
+     * @return void
+     */
     public function testQuery()
     {
-        print_r($this->newQueryBuilder()->query('SELECT Id FROM Account LIMIT 1')->first());
+        $queryBuilder = $this->newQueryBuilder();
+
+        $queryBuilder
+            ->prepareStatement()
+                ->select('Id, dings, (select dingsbums from account limit 1)')
+                ->select('TYPEOF Account WHEN dings THEN bums END')
+                ->select('dingsbums')
+                ->select('kloing')
+                ->from('Account a')
+                ->where($queryBuilder->getConditionBuilder
+                    ('witz > 3')
+                    ->aand($queryBuilder->getConditionBuilder
+                        ('dings > 3')
+                        ->oor('bims < 4')
+                        ->end()
+                    )
+                    ->end()
+                )
+                ->with($queryBuilder->getConditionBuilder
+                    ("DATA CATEGORY nase BELOW wurst")
+                    ->aand("DATA CATEGORY wurst ABOVE hans")
+                    ->end()
+                )
+        ;
     }
 } 

@@ -118,7 +118,7 @@ class Parser
     {
         $this->tokenizer->checkKeyword('SELECT');
 
-        $this->scope = static::SCOPE_SELECT;
+        $this->enterScope(static::SCOPE_SELECT);
 
         $query = new AST\Query();
 
@@ -126,17 +126,9 @@ class Parser
 
         $this->tokenizer->checkKeyword('FROM');
 
-        $this->scope = static::SCOPE_FROM;
+        $this->enterScope(static::SCOPE_FROM);
 
-        $this->tokenizer->expect(TokenDefinition::T_EXPRESSION);
-
-        $from = $this->tokenizer->getValue();
-
-        $this->tokenizer->proceedSkip();
-
-        $alias = $this->parseAlias();
-
-        $query->from = new AST\From($from, $alias);
+        $query->from = $this->parseFrom();
 
         $this->tokenizer->check(array(
             TokenDefinition::T_KEYWORD,
@@ -146,9 +138,7 @@ class Parser
 
         if($this->tokenizer->isKeyword('WHERE'))
         {
-            $this->scope = static::SCOPE_WHERE;
-
-            $this->tokenizer->proceedSkip();
+            $this->enterScope(static::SCOPE_WHERE);
 
             $query->where = new AST\Where($this->parseLogicalGroup());
         }
@@ -161,20 +151,9 @@ class Parser
 
         if($this->tokenizer->isKeyword('WITH'))
         {
-            $this->scope = static::SCOPE_WITH;
+            $this->enterScope(static::SCOPE_WITH);
 
-            $this->tokenizer->proceedSkip();
-
-            if($this->tokenizer->isKeyword('DATA'))
-            {
-                $this->tokenizer->expectKeyword('CATEGORY');
-
-                $query->with = new AST\With($this->parseWithDataCategory(), AST\With::DATA_CATEGORY);
-            }
-            else
-            {
-                $query->with = new AST\With($this->parseLogicalGroup());
-            }
+            $query->with = $this->parseWith();
         }
 
         $this->tokenizer->check(array(
@@ -185,7 +164,7 @@ class Parser
 
         if($this->tokenizer->isKeyword('GROUP'))
         {
-            $this->scope = static::SCOPE_GROUPBY;
+            $this->enterScope(static::SCOPE_GROUPBY);
 
             $this->tokenizer->expectKeyword('BY');
 
@@ -201,7 +180,7 @@ class Parser
 
             if($this->tokenizer->isKeyword('HAVING'))
             {
-                $this->scope = static::SCOPE_HAVING;
+                $this->enterScope(static::SCOPE_HAVING);
 
                 $this->tokenizer->proceedSkip();
 
@@ -217,7 +196,7 @@ class Parser
 
         if($this->tokenizer->isKeyword('ORDER'))
         {
-            $this->scope = self::SCOPE_ORDERBY;
+            $this->enterScope(self::SCOPE_ORDERBY);
 
             $this->tokenizer->expectKeyword('BY');
 
@@ -230,7 +209,7 @@ class Parser
             TokenDefinition::T_RIGHT_PAREN
         ));
 
-        $this->scope = null;
+        $this->clearScope();
 
         if($this->tokenizer->isKeyword('LIMIT'))
         {
@@ -613,10 +592,28 @@ class Parser
     }
 
     /**
+     * @return AST\From
+     */
+    public function parseFrom()
+    {
+        $this->tokenizer->expect(TokenDefinition::T_EXPRESSION);
+
+        $from = $this->tokenizer->getValue();
+
+        $this->tokenizer->proceedSkip();
+
+        $alias = $this->parseAlias();
+
+        return new AST\From($from, $alias);
+    }
+
+    /**
      * @return AST\LogicalGroup
      */
     public function parseLogicalGroup($groupLogical = null, $level = 0)
     {
+        $this->tokenizer->proceedSkip();
+
         $group = new AST\LogicalGroup($groupLogical);
 
         $n = 0;
@@ -794,6 +791,28 @@ class Parser
             $n ++;
         }
         return $group;
+    }
+
+    /**
+     * @return AST\With
+     */
+    public function parseWith()
+    {
+        $with = null;
+
+        $this->tokenizer->proceedSkip();
+
+        if($this->tokenizer->isKeyword('DATA'))
+        {
+            $this->tokenizer->expectKeyword('CATEGORY');
+
+            $with = new AST\With($this->parseWithDataCategory(), AST\With::DATA_CATEGORY);
+        }
+        else
+        {
+            $with = new AST\With($this->parseLogicalGroup());
+        }
+        return $with;
     }
 
     /**
@@ -1002,5 +1021,33 @@ class Parser
     public function throwError($message)
     {
         throw new TokenizerException($message, $this->tokenizer);
+    }
+
+    /**
+     * @param string $soql
+     */
+    public function setSoql($soql)
+    {
+        $this->isSubquery = false;
+
+        $this->clearScope();
+
+        $this->tokenizer->tokenize($soql);
+    }
+
+    /**
+     * @param string $scope
+     */
+    public function enterScope($scope)
+    {
+        $this->scope = $scope;
+    }
+
+    /**
+     * void
+     */
+    public function clearScope()
+    {
+        $this->scope = null;
     }
 }

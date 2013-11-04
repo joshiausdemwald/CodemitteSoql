@@ -568,7 +568,7 @@ HAVING MAX(Amount) > 10000");
 
         $cacheWarmer = new CacheWarmer($client, true);
 
-        $cacheWarmer->warmup();
+        // $cacheWarmer->warmup();
 
         foreach($accouts AS $account)
         {
