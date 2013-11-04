@@ -1,24 +1,19 @@
 {
-    "name": "codemitte/soql-parser",
-    "description": "Tokenizer, parser and builder for salesforce SOQL queries",
+    "name": "phpforce/query-builder",
+    "description": "Query builder for salesforce SOQL queries",
     "type": "library",
     "keywords": [
         "salesforce",
         "apex",
         "soql"
     ],
-    "homepage": "http://code-mitte.de",
     "license": "MIT",
     "authors": [
         {
             "name": "Johannes Heinen",
-            "email": "jh@code-mitte.de",
+            "email": "johannes.heinen@gmail.com",
             "role": "lead"
         }
-    ],
-    "repositories" : [
-        { "type": "vcs", "url" : "git@github.com:joshiausdemwald/soap-client.git" },
-        { "type": "vcs", "url" : "git@github.com:joshiausdemwald/common-1.git" }
     ],
     "require" : {
         "php" : ">=5.3.6",
@@ -29,8 +24,7 @@
         "doctrine/common": "2.4.*",
         "monolog/monolog": ">=1.6.0,<2.0.0",
         "jms/metadata" : "1.4.*",
-        "phpforce/soap-client": "dev-metadata",
-        "phpforce/common": "dev-master"
+        "phpforce/soap-client": "dev-master",
     },
     "require-dev" : {
         "ext-xdebug" : "*",
