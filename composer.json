@@ -17,7 +17,7 @@
         }
     ],
     "repositories" : [
-        { "type": "vcs", "url" : "git://github.com/joshiausdemwald/soap-client.git" },
+        { "type": "vcs", "url" : "git@github.com:joshiausdemwald/soap-client.git" },
         { "type": "vcs", "url" : "git@github.com:joshiausdemwald/common-1.git" }
     ],
     "require" : {
@@ -29,7 +29,7 @@
         "doctrine/common": "2.4.*",
         "monolog/monolog": ">=1.6.0,<2.0.0",
         "jms/metadata" : "1.4.*",
-        "phpforce/soap-client": "dev-metadata@dev",
+        "phpforce/soap-client": "dev-metadata",
         "phpforce/common": "dev-master"
     },
     "require-dev" : {
@@ -43,10 +43,9 @@
     },
     "autoload": {
         "psr-0": {
-            "Codemitte\\Test\\": "test/src/",
-            "Codemitte\\": "src/"
+            "Joshiausdemwald\\Test\\Phpforce": "test/src/",
+            "Joshiausdemwald\\Phpforce": "src/"
         }
     },
-    "prefer-stable" : true,
     "minimum-stability": "stable"
 }

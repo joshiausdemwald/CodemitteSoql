@@ -3,7 +3,7 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "9a85eb7f117e35ec05298d5f3bdd6a0d",
+    "hash": "6eb495e9cc69d53f73b8a464becb300f",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -119,7 +119,8 @@
                 {
                     "name": "Jonathan Wage",
                     "email": "jonwage@gmail.com",
-                    "homepage": "http://www.jwage.com/"
+                    "homepage": "http://www.jwage.com/",
+                    "role": "Creator"
                 },
                 {
                     "name": "Guilherme Blanco",
@@ -185,7 +186,8 @@
                 {
                     "name": "Jonathan Wage",
                     "email": "jonwage@gmail.com",
-                    "homepage": "http://www.jwage.com/"
+                    "homepage": "http://www.jwage.com/",
+                    "role": "Creator"
                 },
                 {
                     "name": "Guilherme Blanco",
@@ -339,7 +341,7 @@
                 {
                     "name": "Johannes Schmitt",
                     "email": "schmittjoh@gmail.com",
-                    "homepage": "https://github.com/schmittjoh",
+                    "homepage": "http://jmsyst.com",
                     "role": "Developer of wrapped JMSSerializerBundle"
                 }
             ],
@@ -524,14 +526,8 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/phpforce/common.git",
-                "reference": "a8721196e4cd82332d0289221acce35bc9726b1c"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phpforce/common/zipball/a8721196e4cd82332d0289221acce35bc9726b1c",
-                "reference": "a8721196e4cd82332d0289221acce35bc9726b1c",
-                "shasum": ""
+                "url": "git@github.com:joshiausdemwald/common-1.git",
+                "reference": "a072e3118e31f6a1774f537a6f55cb4ad4397411"
             },
             "require": {
                 "php": ">=5.3.0",
@@ -543,7 +539,6 @@
                     "Phpforce\\Common": "src"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -562,39 +557,29 @@
                 "soap",
                 "web services"
             ],
-            "time": "2013-07-13 15:27:09"
+            "time": "2013-10-31 15:59:12"
         },
         {
             "name": "phpforce/soap-client",
             "version": "dev-metadata",
             "source": {
                 "type": "git",
-                "url": "https://github.com/joshiausdemwald/soap-client.git",
-                "reference": "92af78544a06e7f0e14b4f2ed21c04f79dc829ff"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/joshiausdemwald/soap-client/zipball/92af78544a06e7f0e14b4f2ed21c04f79dc829ff",
-                "reference": "92af78544a06e7f0e14b4f2ed21c04f79dc829ff",
-                "shasum": ""
+                "url": "git@github.com:joshiausdemwald/soap-client.git",
+                "reference": "ef7e7bb6f98947cdc5a359e0eb14c41b85b8a576"
             },
             "require": {
+                "doctrine/common": "2.4.*",
                 "php": ">=5.3.0",
-                "phpforce/common": "dev-master",
+                "phpforce/common": "dev-master@dev",
                 "psr/log": "*"
             },
-            "require-dev": {
-                "doctrine/common": "2.3@stable"
-            },
             "suggest": {
-                "doctrine/common": "For caching SOAP responses",
                 "monolog/monolog": "For logging SOAP transactions"
             },
             "type": "library",
             "autoload": {
                 "psr-0": {
-                    "Phpforce\\SoapClient": "src",
-                    "Phpforce\\Metadata": "src"
+                    "Phpforce\\SoapClient": "src/"
                 }
             },
             "license": [
@@ -615,10 +600,7 @@
                 "soap",
                 "web services"
             ],
-            "support": {
-                "source": "https://github.com/joshiausdemwald/soap-client/tree/metadata"
-            },
-            "time": "2013-10-24 15:54:58"
+            "time": "2013-11-04 12:57:21"
         },
         {
             "name": "psr/log",
