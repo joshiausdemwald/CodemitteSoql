@@ -24,7 +24,7 @@
         "doctrine/common": "2.4.*",
         "monolog/monolog": ">=1.6.0,<2.0.0",
         "jms/metadata" : "1.4.*",
-        "phpforce/soap-client": "dev-master",
+        "phpforce/soap-client": "dev-master"
     },
     "require-dev" : {
         "ext-xdebug" : "*",
