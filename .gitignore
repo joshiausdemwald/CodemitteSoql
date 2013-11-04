@@ -1,7 +1,7 @@
 .idea
 .DS_STORE
-phpunit.xml
-composer.phar
+./phpunit.xml
+./composer.phar
 vendor/*
 test/cache/*
 test/fixtures/partner.wsdl.xml
