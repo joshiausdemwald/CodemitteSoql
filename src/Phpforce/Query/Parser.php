@@ -170,8 +170,6 @@ class Parser
                 $this->tokenizer->expectKeyword('CATEGORY');
 
                 $query->with = new AST\With($this->parseWithDataCategory(), AST\With::DATA_CATEGORY);
-
-
             }
             else
             {
