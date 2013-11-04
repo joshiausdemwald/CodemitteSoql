@@ -23,7 +23,7 @@ class TokenizerTest extends \PHPUnit_Framework_TestCase
 {
     public function newParser()
     {
-        return new Parser(new Tokenizer(new EventDispatcher()), new FilesystemCache(__DIR__ . '/../../../cache/', 'query'));
+        return new Parser(new Tokenizer(new EventDispatcher()), new FilesystemCache(__DIR__ . '/../../../../cache/', 'query'));
     }
 
     protected function setUp()
