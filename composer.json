@@ -17,7 +17,8 @@
         }
     ],
     "repositories" : [
-        { "type": "vcs", "url" : "git://github.com/joshiausdemwald/soap-client.git" }
+        { "type": "vcs", "url" : "git://github.com/joshiausdemwald/soap-client.git" },
+        { "type": "vcs", "url" : "git@github.com:joshiausdemwald/common-1.git" }
     ],
     "require" : {
         "php" : ">=5.3.6",

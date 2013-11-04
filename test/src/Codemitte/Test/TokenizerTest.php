@@ -12,7 +12,7 @@ use Codemitte\ForceToolkit\Soql\Renderer\Renderer;
 use Codemitte\ForceToolkit\Soql\Tokenizer;
 use Doctrine\Common\Cache\FilesystemCache;
 use Monolog\Logger;
-use Phpforce\Metadata\CacheWarmer;
+use Phpforce\SoapClient\Metadata\CacheWarmer;
 use Phpforce\SoapClient\ClientBuilder;
 use Phpforce\SoapClient\Soap\WSDL\Wsdl;
 use PHPUnit_Framework_Exception;
@@ -566,10 +566,9 @@ HAVING MAX(Amount) > 10000");
         ParentId, Parent.Name, Parent.Id, IgnoreSiretDuplicateCheck__c, TaxCode1__c,
         (SELECT Id, FirstName FROM Contacts LIMIT 2) FROM Account LIMIT 3');
 
-        $cacheWarmer = new CacheWarmer($client, new FilesystemCache(__DIR__ . '/../../../cache/', 'metadata'));
+        $cacheWarmer = new CacheWarmer($client, true);
 
         $cacheWarmer->warmup();
-
 
         foreach($accouts AS $account)
         {
