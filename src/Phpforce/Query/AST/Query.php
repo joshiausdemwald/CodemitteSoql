@@ -1,35 +1,55 @@
 <?php
 namespace Phpforce\Query\AST;
 
-
 class Query extends Node
 {
     /**
-     * @var Typeof[]|Field[]|Subquery[]
+     * @var Select
      */
-    public $select = array();
+    public $select;
 
     /**
-     * @var FromPart
+     * @var From
      */
     public $from;
 
     /**
-     * @var LogicalGroup[]
+     * @var Where
      */
     public $where;
 
+    /**
+     * @var With
+     */
     public $with;
 
+    /**
+     * @var GroupBy
+     */
     public $groupBy;
 
+    /**
+     * @var Having
+     */
     public $having;
 
+    /**
+     * @var int
+     */
     public $limit;
 
+    /**
+     * @var int
+     */
     public $offset;
 
+    /**
+     * @var string
+     */
     public $for;
 
+    /**
+     * @var string
+     */
     public $update;
 } 

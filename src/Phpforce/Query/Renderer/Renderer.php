@@ -2,20 +2,8 @@
 namespace Phpforce\Query\Renderer;
 
 
-use Phpforce\Query\AST\Field;
-use Phpforce\Query\AST\From;
-use Phpforce\Query\AST\GroupBy;
-use Phpforce\Query\AST\Having;
-use Phpforce\Query\AST\LogicalCondition;
-use Phpforce\Query\AST\LogicalGroup;
-use Phpforce\Query\AST\Query;
-use Phpforce\Query\AST\SoqlFunction;
-use Phpforce\Query\AST\Typeof;
-use Phpforce\Query\AST\Val;
-use Phpforce\Query\AST\Where;
-use Phpforce\Query\AST\With;
-use Phpforce\Query\Builder\Type\Currency;
-use Phpforce\Query\Builder\Type\Date;
+use Phpforce\Query\AST;
+use Phpforce\Query\Builder\Type;
 use Phpforce\Query\TokenDefinition;
 
 class Renderer
@@ -34,7 +22,7 @@ class Renderer
      * @param Query $query
      * @param array $variables
      */
-    public function render(Query $query, array $variables = array())
+    public function render(AST\Query $query, array $variables = array())
     {
         $this->output = '';
 
@@ -51,7 +39,7 @@ class Renderer
      *
      * @return string $output
      */
-    public function renderQuery(Query $query)
+    public function renderQuery(AST\Query $query)
     {
         $this->renderSelect($query->select);
 
@@ -77,29 +65,31 @@ class Renderer
     /**
      * @param array $fieldsn
      */
-    public function renderSelect(array $fields)
+    public function renderSelect(AST\Select $select)
     {
         $this->output .= 'SELECT ';
+
+        $fields = $select->fields;
 
         for($i = 0; $len = count($fields), $i < $len; $i ++)
         {
             $field = $fields[$i];
 
-            if($field instanceof Field)
+            if($field instanceof AST\Field)
             {
                 $this->renderField($field);
             }
-            elseif($field instanceof Query)
+            elseif($field instanceof AST\Query)
             {
                 $this->output .= '(';
                 $this->renderQuery($field);
                 $this->output .= ')';
             }
-            elseif($field instanceof Typeof)
+            elseif($field instanceof AST\Typeof)
             {
                 $this->renderTypeof($field);
             }
-            elseif($field instanceof SoqlFunction)
+            elseif($field instanceof AST\SoqlFunction)
             {
                 $this->renderFunction($field);
             }
@@ -142,7 +132,7 @@ class Renderer
     /**
      * @param Field $field
      */
-    private function renderField(Field $field)
+    private function renderField(AST\Field $field)
     {
         $this->output .= $field->value;
 
@@ -155,7 +145,7 @@ class Renderer
     /**
      * @param SoqlFunction $function
      */
-    public function renderFunction(SoqlFunction $function)
+    public function renderFunction(AST\SoqlFunction $function)
     {
         $this->output .= $function->name . '(';
         $this->renderArguments($function->arguments);
@@ -175,11 +165,11 @@ class Renderer
         $size = count($arguments);
         foreach($arguments AS $argument)
         {
-            if($argument instanceof SoqlFunction)
+            if($argument instanceof AST\SoqlFunction)
             {
                 $this->renderFunction($argument);
             }
-            elseif($argument instanceof Field)
+            elseif($argument instanceof AST\Field)
             {
                 $this->renderField($argument);
             }
@@ -194,7 +184,7 @@ class Renderer
     /**
      * @param Typeof $typeof
      */
-    public function renderTypeof(Typeof $typeof)
+    public function renderTypeof(AST\Typeof $typeof)
     {
         $this->output .= 'TYPEOF ' . $typeof->fieldname;
 
@@ -219,7 +209,7 @@ class Renderer
     /**
      * @param From $from
      */
-    public function renderFrom(From $from)
+    public function renderFrom(AST\From $from)
     {
         $this->output .= ' FROM ' . $from->value;
     }
@@ -227,7 +217,7 @@ class Renderer
     /**
      * @param Where $where
      */
-    public function renderWhere(Where $where = null)
+    public function renderWhere(AST\Where $where = null)
     {
         if(null === $where) return;
 
@@ -239,11 +229,11 @@ class Renderer
     /**
      * @param With $with
      */
-    public function renderWith(With $with = null)
+    public function renderWith(AST\With $with = null)
     {
         if(null === $with) return;
 
-        $this->output .= ' WITH ' . $with->what . ' ';
+        $this->output .= ' WITH ';
 
         $this->renderLogicalGroup($with->logicalGroup);
     }
@@ -251,7 +241,7 @@ class Renderer
     /**
      * @param LogicalGroup $group
      */
-    public function renderLogicalGroup(LogicalGroup $group)
+    public function renderLogicalGroup(AST\LogicalGroup $group)
     {
         foreach($group->conditions AS $condition)
         {
@@ -260,7 +250,7 @@ class Renderer
                 $this->output .= ' ' . $condition->logical . ' ';
             }
 
-            if($condition instanceof LogicalGroup)
+            if($condition instanceof AST\LogicalGroup)
             {
                 $this->output .= '(';
                 $this->renderLogicalGroup($condition);
@@ -268,6 +258,11 @@ class Renderer
             }
             else
             {
+                if($condition->type)
+                {
+                    $this->output .= ' ' . $condition->type . ' ';
+                }
+
                 $this->renderLeftOperand($condition->left);
 
                 $this->output .= ' ' . $condition->operator . ' ';
@@ -282,7 +277,7 @@ class Renderer
      */
     public function renderLeftOperand($operand)
     {
-        if($operand instanceof SoqlFunction)
+        if($operand instanceof AST\SoqlFunction)
         {
             $this->renderFunction($operand);
         }
@@ -295,7 +290,7 @@ class Renderer
     /**
      * @param Val $val
      */
-    public function renderRightOperand(Val $val)
+    public function renderRightOperand(AST\Val $val)
     {
         switch($val->type)
         {
@@ -344,7 +339,7 @@ class Renderer
     /**
      * @param Having $having
      */
-    public function renderHaving(Having $having = null)
+    public function renderHaving(AST\Having $having = null)
     {
         if(null === $having) return;
 
@@ -356,7 +351,7 @@ class Renderer
     /**
      * @param GroupBy $groupBy
      */
-    public function renderGroupBy(GroupBy $groupBy = null)
+    public function renderGroupBy(AST\GroupBy $groupBy = null)
     {
         if(null === $groupBy) return;
 
@@ -435,44 +430,44 @@ class Renderer
             {
                 $list[] = $this->convertVariable($var);
             }
-            $val = new Val($list, 'LIST');
+            $val = new AST\Val($list, 'LIST');
         }
         elseif(null === $variable)
         {
-            $val = new Val('NULL', 'NULL');
+            $val = new AST\Val('NULL', 'NULL');
         }
         elseif(true === $variable)
         {
-            $val = new Val('TRUE', 'TRUE');
+            $val = new AST\Val('TRUE', 'TRUE');
         }
         elseif(false === $variable)
         {
-            $val = new Val('FALSE', 'FALSE');
+            $val = new AST\Val('FALSE', 'FALSE');
         }
         elseif(is_string($variable))
         {
-            $val = new Val($variable, 'STRING');
+            $val = new AST\Val($variable, 'STRING');
         }
         elseif(is_float($variable))
         {
-            $val = new Val($variable, 'FLOAT');
+            $val = new AST\Val($variable, 'FLOAT');
         }
         elseif(is_float($variable))
         {
-            $val = new Val($variable, 'NUMBER');
+            $val = new AST\Val($variable, 'NUMBER');
         }
-        // WHAT IS WITH DATE????
+        // @todo HOW HANDLE DATES?
         elseif($variable instanceof \DateTime)
         {
-            $val = new Val($variable->format(\DateTime::ISO8601), 'DATETIME_FORMAT');
+            $val = new AST\Val($variable->format(\DateTime::ISO8601), 'DATETIME_FORMAT');
         }
-        elseif($variable instanceof Date)
+        elseif($variable instanceof Type\Date)
         {
-            $val = new Val($variable->format('Y-m-d'), 'DATE_FORMAT');
+            $val = new AST\Val($variable->format('Y-m-d'), 'DATE_FORMAT');
         }
-        elseif($variable instanceof Currency)
+        elseif($variable instanceof Type\Currency)
         {
-            $val = new Val($variable->getCurrencyIsoCode() . strval(abs($variable->getAmount())), 'CURRENCY_NUMBER');
+            $val = new AST\Val($variable->getCurrencyIsoCode() . strval(abs($variable->getAmount())), 'CURRENCY_NUMBER');
         }
         else
         {

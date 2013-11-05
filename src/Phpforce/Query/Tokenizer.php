@@ -346,7 +346,7 @@ class Tokenizer implements TokenizerInterface
     {
         $this->soql = $soql;
 
-        $this->col = $this->index = 0;
+        $this->col  = $this->index = 0;
 
         $this->line = 0;
 

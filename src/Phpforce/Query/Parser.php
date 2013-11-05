@@ -102,8 +102,6 @@ class Parser
         {
             $this->tokenizer->tokenize($soql);
 
-            $this->tokenizer->proceedSkip();
-
             $this->query = $this->parseQuery();
 
             $this->cache->save($id, $this->query);
@@ -116,17 +114,9 @@ class Parser
      */
     public function parseQuery()
     {
-        $this->tokenizer->checkKeyword('SELECT');
-
-        $this->enterScope(static::SCOPE_SELECT);
-
         $query = new AST\Query();
 
-        $query->select = $this->parseSelectFieldList();
-
-        $this->tokenizer->checkKeyword('FROM');
-
-        $this->enterScope(static::SCOPE_FROM);
+        $query->select = $this->parseSelect();
 
         $query->from = $this->parseFrom();
 
@@ -140,7 +130,7 @@ class Parser
         {
             $this->enterScope(static::SCOPE_WHERE);
 
-            $query->where = new AST\Where($this->parseLogicalGroup());
+            $query->where = new AST\Where($this->parseWhere());
         }
 
         $this->tokenizer->check(array(
@@ -151,9 +141,7 @@ class Parser
 
         if($this->tokenizer->isKeyword('WITH'))
         {
-            $this->enterScope(static::SCOPE_WITH);
-
-            $query->with = $this->parseWith();
+            $query->with = new AST\With($this->parseWith());
         }
 
         $this->tokenizer->check(array(
@@ -164,11 +152,7 @@ class Parser
 
         if($this->tokenizer->isKeyword('GROUP'))
         {
-            $this->enterScope(static::SCOPE_GROUPBY);
-
             $this->tokenizer->expectKeyword('BY');
-
-            $this->tokenizer->proceedSkip();
 
             $query->groupBy = $this->parseGroupBy();
 
@@ -180,11 +164,7 @@ class Parser
 
             if($this->tokenizer->isKeyword('HAVING'))
             {
-                $this->enterScope(static::SCOPE_HAVING);
-
-                $this->tokenizer->proceedSkip();
-
-                $query->having = new AST\Having($this->parseLogicalGroup());
+                $query->having = new AST\Having($this->parseHaving());
             }
         }
 
@@ -196,8 +176,6 @@ class Parser
 
         if($this->tokenizer->isKeyword('ORDER'))
         {
-            $this->enterScope(self::SCOPE_ORDERBY);
-
             $this->tokenizer->expectKeyword('BY');
 
             $query->orderBy = new AST\OrderBy($this->parseOrderBy());
@@ -267,10 +245,22 @@ class Parser
     }
 
     /**
+     * @return AST\Select
+     */
+    public function parseSelect()
+    {
+        $this->tokenizer->expectKeyword('SELECT');
+
+        return new AST\Select($this->parseSelectFieldList());
+    }
+
+    /**
      * @return Field[]|Query[]|Typeof[]
      */
     public function parseSelectFieldList()
     {
+        $this->enterScope(static::SCOPE_SELECT);
+
         $fields = array();
 
         $withCount = false;
@@ -331,8 +321,6 @@ class Parser
         // SUBQUERY
         elseif($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
         {
-            $this->tokenizer->proceedSkip();
-
             return $this->parseSubquery();
         }
         else
@@ -596,6 +584,18 @@ class Parser
      */
     public function parseFrom()
     {
+        $this->tokenizer->checkKeyword('FROM');
+
+        return $this->parseFromField();
+    }
+
+    /**
+     * @return AST\From
+     */
+    public function parseFromField()
+    {
+        $this->enterScope(static::SCOPE_FROM);
+
         $this->tokenizer->expect(TokenDefinition::T_EXPRESSION);
 
         $from = $this->tokenizer->getValue();
@@ -605,6 +605,26 @@ class Parser
         $alias = $this->parseAlias();
 
         return new AST\From($from, $alias);
+    }
+
+    /**
+     * @return AST\LogicalGroup
+     */
+    public function parseWhere()
+    {
+        $this->enterScope(static::SCOPE_WHERE);
+
+        return $this->parseLogicalGroup();
+    }
+
+    /**
+     * @return AST\LogicalGroup
+     */
+    public function parseWith()
+    {
+        $this->enterScope(static::SCOPE_WITH);
+
+        return $this->parseLogicalGroup();
     }
 
     /**
@@ -651,6 +671,19 @@ class Parser
                 $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
 
                 $this->tokenizer->proceedSkip();
+            }
+
+            // [WITH] DATA CATEGORY
+            elseif($this->tokenizer->isKeyword('DATA'))
+            {
+                $this->tokenizer->expectKeyword('CATEGORY');
+
+                if($this->scope != static::SCOPE_WITH)
+                {
+                    $this->throwError(sprintf('Unexpected "DATA CATEGORY" in "%s"', $this->scope));
+                }
+
+                return $this->parseWithDataCategory();
             }
 
             // Condition, followed by "AND"/"OR"
@@ -794,28 +827,6 @@ class Parser
     }
 
     /**
-     * @return AST\With
-     */
-    public function parseWith()
-    {
-        $with = null;
-
-        $this->tokenizer->proceedSkip();
-
-        if($this->tokenizer->isKeyword('DATA'))
-        {
-            $this->tokenizer->expectKeyword('CATEGORY');
-
-            $with = new AST\With($this->parseWithDataCategory(), AST\With::DATA_CATEGORY);
-        }
-        else
-        {
-            $with = new AST\With($this->parseLogicalGroup());
-        }
-        return $with;
-    }
-
-    /**
      * @return AST\LogicalGroup
      */
     public function parseWithDataCategory()
@@ -858,6 +869,7 @@ class Parser
                     }
                 }
                 $categoryName = new AST\Val($categoryNames, 'LIST');
+                
                 $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
             }
             else
@@ -867,7 +879,11 @@ class Parser
                 $categoryName = new AST\Val($this->tokenizer->getValue(), 'CATEGORYNAME');
             }
 
-            $group->conditions[] = new AST\LogicalCondition($groupName, $filteringSelector, $categoryName);
+            $condition = new AST\LogicalCondition($groupName, $filteringSelector, $categoryName);
+
+            $condition->type = 'DATA CATEGORY';
+
+            $group->conditions[] = $condition;
 
             $this->tokenizer->proceedSkip();
 
@@ -888,6 +904,10 @@ class Parser
      */
     public function parseGroupBy()
     {
+        $this->tokenizer->proceedSkip();
+
+        $this->enterScope(static::SCOPE_GROUPBY);
+
         $fields = array();
 
         $funcname = null;
@@ -955,10 +975,22 @@ class Parser
     }
 
     /**
+     * @return AST\LogicalGroup
+     */
+    public function parseHaving()
+    {
+        $this->enterScope(static::SCOPE_HAVING);
+
+        return $this->parseLogicalGroup();
+    }
+
+    /**
      * @return OrderByField[]
      */
     public function parseOrderBy()
     {
+        $this->enterScope(self::SCOPE_ORDERBY);
+
         $retVal = array();
 
         while(true)
@@ -1030,8 +1062,6 @@ class Parser
     {
         $this->isSubquery = false;
 
-        $this->clearScope();
-
         $this->tokenizer->tokenize($soql);
     }
 
@@ -1049,5 +1079,21 @@ class Parser
     public function clearScope()
     {
         $this->scope = null;
+    }
+
+    /**
+     * @return string
+     */
+    public function getScope()
+    {
+        return $this->scope;
+    }
+
+    /**
+     * @return \Phpforce\Query\Tokenizer
+     */
+    public function getTokenizer()
+    {
+        return $this->tokenizer;
     }
 }

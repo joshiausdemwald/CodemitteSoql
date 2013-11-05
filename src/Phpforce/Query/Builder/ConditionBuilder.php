@@ -12,98 +12,120 @@ class ConditionBuilder
     private $queryBuilder;
 
     /**
+     * @var ConditionBuilder
+     */
+    private $parent;
+
+    /**
+     * @var callable
+     */
+    private $method;
+
+    /**
      * @var AST\LogicalGroup
      */
-    private $logicalGroup;
+    private $ast;
 
     /**
      * @param QueryBuilder $queryBuilder
+     * @param string $method
+     * @param ConditionBuilder|null $parent
+     * @param string|null $class
      */
-    public function __construct(QueryBuilder $queryBuilder)
+    public function __construct(QueryBuilder $queryBuilder, AST\LogicalGroup $ast, array $method, ConditionBuilder $parent = null, $class = null)
     {
         $this->queryBuilder = $queryBuilder;
+
+        $this->ast          = $ast;
+
+        $this->method = $method;
+
+        $this->parent = $parent;
     }
 
     /**
-     * @param string $soql
-     *
      * @return ConditionBuilder
      */
-    public function set($soql)
+    public function condition($soql, $logical = null)
     {
-        if($soql instanceof AST\LogicalGroup)
+        $this->queryBuilder->getParser()->setSoql($soql);
+
+        $group = \call_user_func($this->method);
+
+        if(null === $logical)
         {
-            $this->logicalGroup = $soql;
+            $this->ast->conditions = $group->conditions;
         }
         else
         {
-            $this->queryBuilder->getParser()->setSoql($soql);
+            $group->logical = $logical;
 
-            $this->logicalGroup = $this->queryBuilder->getParser()->parseLogicalGroup();
+            $this->ast->conditions[] = $group;
         }
         return $this;
     }
 
     /**
-     * @param LogicalGroup[]|string $soql
+     * @param $soql
      *
      * @return ConditionBuilder
      */
-    public function aand($soql)
+    public function andCondition($soql)
     {
-        $group = null;
-
-        if($soql instanceof AST\LogicalGroup)
-        {
-            $group = $soql;
-        }
-        else
-        {
-            $this->queryBuilder->getParser()->setSoql($soql);
-
-            $group = $this->queryBuilder->getParser()->parseLogicalGroup('AND');
-        }
-
-        $group->logical = 'AND';
-
-        $this->logicalGroup->conditions[] = $group;
-
-        return $this;
+        return $this->condition($soql, 'AND');
     }
 
     /**
-     * @param string $soql
+     * @param $soql
      *
      * @return ConditionBuilder
      */
-    public function oor($soql)
+    public function orCondition($soql)
     {
-        $group = null;
-
-        if($soql instanceof AST\LogicalGroup)
-        {
-            $group = $soql;
-        }
-        else
-        {
-            $this->queryBuilder->getParser()->setSoql($soql);
-
-            $group = $this->queryBuilder->getParser()->parseLogicalGroup('AND');
-        }
-
-        $group->logical = 'OR';
-
-        $this->logicalGroup->conditions[] = $group;
-
-        return $this;
+        return $this->condition($soql, 'OR');
     }
 
     /**
-     * @return AST\LogicalGroup $logicalGroup
+     * @return ConditionBuilder
+     */
+    public function group($logical = null)
+    {
+        $childBuilder = new ConditionBuilder($this->queryBuilder, new AST\LogicalGroup($logical), $this->method, $this);
+
+        return $childBuilder;
+    }
+
+    /**
+     * @return ConditionBuilder
+     */
+    public function andGroup()
+    {
+        return $this->group('AND');
+    }
+
+    /**
+     * @return ConditionBuilder
+     */
+    public function orGroup()
+    {
+        return $this->group('OR');
+    }
+
+    /**
+     * @return ConditionBuilder
+     */
+    public function endGroup()
+    {
+        $this->parent->ast->conditions[] = $this->ast;
+
+        return $this->parent;
+    }
+
+    /**
+     * @return QueryBuilder
      */
     public function end()
     {
-        return $this->logicalGroup;
+        return $this->queryBuilder;
     }
-
-} 
+}

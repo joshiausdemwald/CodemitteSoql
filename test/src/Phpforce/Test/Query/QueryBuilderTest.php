@@ -66,27 +66,48 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
     {
         $queryBuilder = $this->newQueryBuilder();
 
+        /*->with() // ConditionBuilder
+            ->add('ding = nums') ConditionBuilder
+            ->addAnd('ping = nums') ConditionBuilder
+            ->addAndGroup() ChildConditionBuilder
+                ->add('ping = nums') ChildConditionBuilder
+                ->addOr('ping = nums') ChildConditionBuilder
+                ->addOrGroup() ChildChildConditionBuilder
+                    ->add('lala = lulul')->addOr('lili = lala') ChildChildConditionBuilder
+                ->end() ChildConditionBuilder
+            ->end() ConditionBuilder
+        ->end() QueryBuilder*/
+
         $queryBuilder
             ->prepareStatement()
                 ->select('Id, dings, (select dingsbums from account limit 1)')
-                ->select('TYPEOF Account WHEN dings THEN bums END')
-                ->select('dingsbums')
-                ->select('kloing')
+                ->addSelect('TYPEOF Account WHEN dings THEN bums END')
+                ->addSelect('dingsbums')
+                ->addSelect('kloing')
                 ->from('Account a')
-                ->where($queryBuilder->getConditionBuilder
-                    ('witz > 3')
-                    ->aand($queryBuilder->getConditionBuilder
-                        ('dings > 3')
-                        ->oor('bims < 4')
-                        ->end()
-                    )
-                    ->end()
-                )
-                ->with($queryBuilder->getConditionBuilder
-                    ("DATA CATEGORY nase BELOW wurst")
-                    ->aand("DATA CATEGORY wurst ABOVE hans")
-                    ->end()
-                )
+                ->where
+                    ('Dings > 3')
+                    ->andCondition('fond = 1')
+                ->end()
+                ->with
+                    ('DATA CATEGORY hans ABOVE usa__c')
+                    ->andCondition('dings1 = "bums1"')
+                    ->andGroup()
+                        ->condition('DINGS2 = "bums2"')
+                    ->endGroup()
+                ->end()
+                ->groupby('Dings, nbums')
+                ->having('COUNT(id) > 10')
+                ->end()
+                ->offset(10)
+                ->orderBy('hans, COUNT(wurst)')
+                ->limit(3)
+                ->forReference()
+                ->forView()
         ;
+
+
+        print_r($queryBuilder->getAst());
+        print_r($queryBuilder->execute());
     }
 } 

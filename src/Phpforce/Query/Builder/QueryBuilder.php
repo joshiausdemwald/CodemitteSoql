@@ -1,7 +1,6 @@
 <?php
 namespace Phpforce\Query\Builder;
 
-use Codemitte\ForceToolkit\Soql\Tokenizer\Tokenizer;
 use Phpforce\Query\AST;
 use Phpforce\Query\Parser;
 use Phpforce\Query\Renderer\Renderer;
@@ -60,11 +59,23 @@ class QueryBuilder
      */
     public function select($selectSoql)
     {
-        $this->parser->enterScope(Parser::SCOPE_SELECT);
-
         $this->parser->setSoql($selectSoql);
 
-        $this->ast->select[] = $this->parser->parseSelectFieldList();
+        $this->ast->select = new AST\Select($this->parser->parseSelectFieldList());
+
+        return $this;
+    }
+
+    /**
+     * @param $selectSoql
+     *
+     * @return QueryBuilder
+     */
+    public function addSelect($selectSoql)
+    {
+        $this->parser->setSoql($selectSoql);
+
+        $this->ast->select->fields = array_merge($this->ast->select->fields, $this->parser->parseSelectFieldList());
 
         return $this;
     }
@@ -74,71 +85,147 @@ class QueryBuilder
      */
     public function from($object)
     {
-        $this->parser->enterScope(Parser::SCOPE_FROM);
-
         $this->parser->setSoql($object);
 
-        $this->ast->from = $this->parser->parseFrom();
+        $this->ast->from = $this->parser->parseFromField();
 
         return $this;
     }
 
     /**
-     * @param AST\LogicalGroup|string
+     * @param string $soql
      *
+     * @return ConditionBuilder
+     */
+    public function where($soql = null)
+    {
+        $this->ast->where = new AST\Where($group = new AST\LogicalGroup());
+
+        $conditionBuilder = new ConditionBuilder($this, $group, array($this->getParser(), 'parseWhere'), null);
+
+        if($soql)
+        {
+            $conditionBuilder->condition($soql);
+        }
+
+        return $conditionBuilder;
+    }
+
+    /**
+     * @param string $soql
+     *
+     * @return ConditionBuilder
+     */
+    public function with($soql = null)
+    {
+        $this->ast->with = new AST\With($group = new AST\LogicalGroup());
+
+        $conditionBuilder = new ConditionBuilder($this, $group, array($this->getParser(), 'parseWith'), null);
+
+        if($soql)
+        {
+            $conditionBuilder->condition($soql);
+        }
+        return $conditionBuilder;
+    }
+
+    /**
      * @return QueryBuilder
      */
-    public function where($where)
+    public function groupby($soql)
     {
-        $this->parser->enterScope(Parser::SCOPE_WHERE);
+        $this->parser->setSoql($soql);
 
-        $this->ast->where = new AST\Where($this->buildLogicalGroup($where));
+        $this->ast->groupBy = $this->parser->parseGroupBy();
 
         return $this;
     }
 
     /**
-     * @param AST\LogicalGroup|string
+     * @param string $soql
+     *
+     * @return ConditionBuilder
+     */
+    public function having($soql = null)
+    {
+        $this->ast->having = new AST\Having($group = new AST\LogicalGroup());
+
+        $conditionBuilder = new ConditionBuilder($this, $group, array($this->getParser(), 'parseHaving'), null);
+
+        if($soql)
+        {
+            $conditionBuilder->condition($soql);
+        }
+
+        return $conditionBuilder;
+    }
+
+    /**
+     * @param $soql
      *
      * @return QueryBuilder
      */
-    public function with($with)
+    public function orderBy($soql)
     {
-        $this->parser->enterScope(Parser::SCOPE_WITH);
+        $this->parser->setSoql($soql);
 
-        if($with instanceof AST\LogicalGroup)
-        {
-            $this->ast->with = new AST\With($this->getConditionBuilder($with)->end());
-        }
-        else
-        {
-            $this->parser->setSoql($with);
-
-            $this->ast->with = $this->parser->parseWith();
-        }
-        print_r($this->ast->with);
+        $this->ast->orderBy = new AST\OrderBy($this->parser->parseOrderBy());
 
         return $this;
     }
 
-    public function groupby()
+    /**
+     * @param int $offset
+     *
+     * @return QueryBuilder
+     */
+    public function offset($offset)
     {
+        $this->ast->offset = $offset;
 
+        return $this;
     }
 
-    public function having()
+    /**
+     * @param int $offset
+     *
+     * @return QueryBuilder
+     */
+    public function limit($limit)
     {
+        $this->ast->limit = $limit;
 
+        return $this;
     }
 
-    public function offset()
+    /**
+     * @return QueryBuilder
+     */
+    public function forView()
     {
+        $this->ast->for = 'VIEW';
 
+        return $this;
     }
 
-    public function limit()
+    /**
+     * @return QueryBuilder
+     */
+    public function forReference()
     {
+        $this->ast->for = 'REFERENCE';
 
+        return $this;
+    }
+
+    /**
+     * @return QueryBuilder
+     */
+    public function updateViewstat()
+    {
+        $this->ast->update = 'VIEWSTAT';
+
+        return $this;
     }
 
     /**
@@ -157,45 +244,34 @@ class QueryBuilder
     }
 
     /**
-     * @param AST\LogicalGroup|string $soql
-     *
-     * @return AST\LogicalGroup $logicalGroup
-     */
-    protected function buildLogicalGroup($soql, $logical = null)
-    {
-        $group = null;
-
-        if($soql instanceof AST\LogicalGroup)
-        {
-            $group = $soql;
-        }
-        else
-        {
-            $group = $this->getConditionBuilder($soql)->end();
-        }
-
-        $group->logical = $logical;
-
-        return $group;
-    }
-
-    /**
-     * @param string $soql
-     *
-     * @return ConditionBuilder
-     */
-    public function getConditionBuilder($soql)
-    {
-        $conditionBuilder = new ConditionBuilder($this);
-
-        return $conditionBuilder->set($soql);
-    }
-
-    /**
      * @return \Phpforce\Query\Parser
      */
     public function getParser()
     {
         return $this->parser;
+    }
+
+    /**
+     * @return null|\Phpforce\Query\AST\Query
+     */
+    public function getAst()
+    {
+        return $this->ast;
+    }
+
+    /**
+     * @return \Phpforce\SoapClient\ClientInterface
+     */
+    public function getClient()
+    {
+        return $this->client;
+    }
+
+    /**
+     * @return \Phpforce\Query\Renderer\Renderer
+     */
+    public function getRenderer()
+    {
+        return $this->renderer;
     }
 }

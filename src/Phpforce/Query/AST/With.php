@@ -4,14 +4,6 @@ namespace Phpforce\Query\AST;
 
 class With extends Node
 {
-    const DATA_CATEGORY = 'DATA CATEGORY';
-
-    /**
-     * Current: "DATA CATEGORY" only
-     * @var string
-     */
-    public $what;
-
     /**
      * @var LogicalGroup
      */
@@ -19,12 +11,11 @@ class With extends Node
 
     /**
      * @param string $what
+     *
      * @param LogicalGroup $group
      */
-    public function __construct(LogicalGroup $group, $what = null)
+    public function __construct(LogicalGroup $group)
     {
-        $this->what = $what;
-
         $this->logicalGroup = $group;
     }
 } 
