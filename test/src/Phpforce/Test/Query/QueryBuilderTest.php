@@ -83,12 +83,10 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $queryBuilder
             ->prepareStatement()
-                ->select('Id, GROUPING(trallala), dings, (SELECT dingsbums FROM account LIMIT 1)')
-                ->addSelect('TYPEOF Account WHEN dings THEN bums END')
-                ->addSelect('dingsbums')
-                ->addSelect('kloing')
+                ->select('Id, GROUPING(Name)')
                 ->from('Account a')
-                ->where
+                ->groupby('Id, Name')
+                /*->where
                     ('NOT fjord1 = 4')
                     ->andCondition('(NOT Dings = 3) AND (NOT dings=5) AND (hans < 7 OR hans > 9)')
                     ->andCondition('fond = 1')
@@ -100,7 +98,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
                 ->withDataCategory
                     ('dings1 ABOVE bums__c')
                     ->andCondition('dings2 AT(usa__c, russia__c)')
-                ->end()
+                ->end()*/
 
                 // ->end()
 /*                ->groupby('Dings, nbums')

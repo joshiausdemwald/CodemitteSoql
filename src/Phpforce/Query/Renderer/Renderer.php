@@ -112,8 +112,6 @@ class Renderer
 
         if(count($fields) > 1)
         {
-            $this->output .= '(';
-
             for($i = 0; $len = count($fields), $i < $len; $i++)
             {
                 $this->renderField($fields[$i]);
@@ -123,7 +121,6 @@ class Renderer
                     $this->output .= ', ';
                 }
             }
-            $this->output .= ')';
         }
         else
         {
