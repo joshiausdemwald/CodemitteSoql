@@ -83,7 +83,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $queryBuilder
             ->prepareStatement()
-                ->select('Id, GROUPING(trallala), dings, (select dingsbums from account limit 1)')
+                ->select('Id, GROUPING(trallala), dings, (SELECT dingsbums FROM account LIMIT 1)')
                 ->addSelect('TYPEOF Account WHEN dings THEN bums END')
                 ->addSelect('dingsbums')
                 ->addSelect('kloing')
@@ -97,7 +97,10 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
                         ->orCondition('ding = "tong"')
                     ->endGroup()
                 ->end()
-                // ->with('dings1 = "bums"')
+                ->withDataCategory
+                    ('dings1 ABOVE bums__c')
+                    ->andCondition('dings2 AT(usa__c, russia__c)')
+                ->end()
 
                 // ->end()
 /*                ->groupby('Dings, nbums')

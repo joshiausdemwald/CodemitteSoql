@@ -2,7 +2,7 @@
 namespace Phpforce\Query\AST;
 
 
-class With extends Node
+class WithDataCategory extends Node
 {
     /**
      * @var LogicalUnit

@@ -118,6 +118,11 @@ class QueryBuilder
      */
     public function with($soql = null)
     {
+        if($this->ast->withDataCategory)
+        {
+            throw new QueryBuilderException('Only WITH or WITH DATA CATEGORY statements allowed..');
+        }
+
         $conditionBuilder = new ConditionBuilder($this, array($this->getParser(), 'parseWith'));
 
         $this->ast->with = new AST\With($conditionBuilder->getAST());
@@ -126,6 +131,7 @@ class QueryBuilder
         {
             $conditionBuilder->condition($soql);
         }
+
         return $conditionBuilder;
     }
 
@@ -136,9 +142,13 @@ class QueryBuilder
      */
     public function withDataCategory($soql = null)
     {
+        if($this->ast->with)
+        {
+            throw new QueryBuilderException('Only WITH or WITH DATA CATEGORY statements allowed..');
+        }
         $conditionBuilder = new ConditionBuilder($this, array($this->getParser(), 'parseWithDataCategory'));
 
-        $this->ast->with = new AST\With($conditionBuilder->getAST());
+        $this->ast->withDataCategory = new AST\WithDataCategory($conditionBuilder->getAST());
 
         if($soql)
         {

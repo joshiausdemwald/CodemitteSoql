@@ -24,6 +24,11 @@ class Query extends Node
     public $with;
 
     /**
+     * @var WithDataCategory
+     */
+    public $withDataCategory;
+
+    /**
      * @var GroupBy
      */
     public $groupBy;

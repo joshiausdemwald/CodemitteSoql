@@ -121,12 +121,6 @@ class Parser
 
         $query->from = $this->parseFrom();
 
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
-
         if($this->tokenizer->isKeyword('WHERE'))
         {
             $this->enterScope(static::SCOPE_WHERE);
@@ -134,22 +128,17 @@ class Parser
             $query->where = new AST\Where($this->parseWhere());
         }
 
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
-
-        if($this->tokenizer->isKeyword('WITH'))
+        if($this->tokenizer->isKeyword('WITH') && ($with = $this->parseWith()))
         {
             $query->with = new AST\With($this->parseWith());
         }
 
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
+        elseif($this->tokenizer->isKeyword('DATA'))
+        {
+            $this->tokenizer->expectKeyword('CATEGORY');
+
+            $query->withDataCategory = new AST\WithDataCategory($this->parseWithDataCategory());
+        }
 
         if($this->tokenizer->isKeyword('GROUP'))
         {
@@ -157,23 +146,11 @@ class Parser
 
             $query->groupBy = $this->parseGroupBy();
 
-            $this->tokenizer->check(array(
-                TokenDefinition::T_KEYWORD,
-                TokenDefinition::T_EOQ,
-                TokenDefinition::T_RIGHT_PAREN
-            ));
-
             if($this->tokenizer->isKeyword('HAVING'))
             {
                 $query->having = new AST\Having($this->parseHaving());
             }
         }
-
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
 
         if($this->tokenizer->isKeyword('ORDER'))
         {
@@ -182,65 +159,29 @@ class Parser
             $query->orderBy = new AST\OrderBy($this->parseOrderBy());
         }
 
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
-
         $this->clearScope();
 
         if($this->tokenizer->isKeyword('LIMIT'))
         {
-            $this->tokenizer->expect(TokenDefinition::T_NUMBER);
-
-            $query->limit = $this->tokenizer->getValue();
-
-            $this->tokenizer->proceedSkip();
+            $query->limit = $this->parseLimit();
         }
-
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
 
         if($this->tokenizer->isKeyword('OFFSET'))
         {
-            $this->tokenizer->expect(TokenDefinition::T_NUMBER);
-
-            $query->offset = $this->tokenizer->getValue();
-
-            $this->tokenizer->proceedSkip();
+            $query->offset = $this->parseOffset();
         }
-
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
 
         if($this->tokenizer->isKeyword('FOR'))
         {
-            $this->tokenizer->expectKeyword(array('VIEW', 'REFERENCE'));
-
-            $query->for = $this->tokenizer->getValue();
-
-            $this->tokenizer->proceedSkip();
+            $query->for = $this->parseFor();
         }
-
-        $this->tokenizer->check(array(
-            TokenDefinition::T_KEYWORD,
-            TokenDefinition::T_EOQ,
-            TokenDefinition::T_RIGHT_PAREN
-        ));
 
         if($this->tokenizer->isKeyword('UPDATE'))
         {
-            $this->tokenizer->expectKeyword('VIEWSTAT');
-
-            $query->update = $this->tokenizer->getValue();
+            $query->update = $this->parseUpdate();
         }
+
+        $this->checkVeryEnd();
 
         return $query;
     }
@@ -587,7 +528,11 @@ class Parser
     {
         $this->tokenizer->checkKeyword('FROM');
 
-        return $this->parseFromField();
+        $from = $this->parseFromField();
+
+        $this->checkEOQ();
+
+        return $from;
     }
 
     /**
@@ -615,7 +560,11 @@ class Parser
     {
         $this->enterScope(static::SCOPE_WHERE);
 
+        $this->tokenizer->proceedSkip();
+
         $group = $this->parseWhereLogicalGroup();
+
+        $this->checkEOQ();
 
         return $group;
     }
@@ -625,17 +574,22 @@ class Parser
      */
     public function parseWith()
     {
-        $this->enterScope(static::SCOPE_WITH);
-
         $this->tokenizer->proceedSkip();
 
         if($this->tokenizer->isKeyword('DATA'))
         {
-            $this->tokenizer->expectKeyword('CATEGORY');
-
-            return $this->parseWithDataCategory();
+            return;
         }
-        return $this->parseWithLogicalGroup();
+        else
+        {
+            $this->enterScope(static::SCOPE_WITH);
+
+            $unit = $this->parseWithLogicalGroup();
+        }
+
+        $this->checkEOQ();
+
+        return $unit;
     }
 
     /**
@@ -647,7 +601,11 @@ class Parser
 
         $this->tokenizer->proceedSkip();
 
-        return $this->parseWithDataCategoryLogicalGroup();
+        $unit = $this->parseWithDataCategoryLogicalGroup();
+
+        $this->checkEOQ();
+
+        return $unit;
     }
 
     /**
@@ -657,8 +615,6 @@ class Parser
      */
     public function parseWhereLogicalGroup()
     {
-        $this->tokenizer->proceedSkip();
-
         $condition = null;
 
         // SUB-GROUP
@@ -666,9 +622,13 @@ class Parser
         {
             $condition = new AST\LogicalGroup();
 
+            $this->tokenizer->proceedSkip();
+
             $condition->firstChild = $this->parseWhereLogicalGroup();
 
             $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
+
+            $this->tokenizer->proceedSkip();
 
             $condition->next = $this->parseWhereLogicalGroup();
         }
@@ -806,6 +766,8 @@ class Parser
             }
             $condition = new AST\LogicalCondition($left, $operator, $right);
 
+            $this->tokenizer->proceedSkip();
+
             $condition->next = $this->parseWhereLogicalGroup();
         }
 
@@ -813,11 +775,14 @@ class Parser
         elseif($this->tokenizer->is(TokenDefinition::T_LOGICAL_OPERATOR))
         {
             $logical              = $this->tokenizer->getValue();
+
+            $this->tokenizer->proceedSkip();
+
             $condition            = $this->parseWhereLogicalGroup();
 
             if($condition->logical)
             {
-                $this->throwError(sprintf('Unexpected "%s"', $logical));
+                $this->throwError(sprintf('Unexpected "%s"', $condition->logical));
             }
             $condition->logical   = $logical;
         }
@@ -836,12 +801,9 @@ class Parser
      */
     public function parseWithLogicalGroup($parentLogical = null)
     {
-        $group = new AST\LogicalGroup($parentLogical);
-
         $right      = null;
         $op         = null;
 
-        // EXPRESSION (fieldname)
         $this->tokenizer->check(TokenDefinition::T_EXPRESSION);
 
         $left = new AST\Field($this->tokenizer->getValue());
@@ -862,9 +824,7 @@ class Parser
 
         $this->tokenizer->proceedSkip();
 
-        $group->conditions[] = new AST\LogicalCondition($left, $operator, $right);
-
-        return $group;
+        return new AST\LogicalCondition($left, $operator, $right);
     }
 
     /**
@@ -874,13 +834,7 @@ class Parser
      */
     public function parseWithDataCategoryLogicalGroup()
     {
-        $group = new AST\LogicalGroup();
-
-        $group->type = 'DATA CATEGORY';
-
-        $logical = null;
-
-        while(true)
+        if($this->tokenizer->is(TokenDefinition::T_EXPRESSION))
         {
             // dataCategoryGroupName
             $this->tokenizer->check(TokenDefinition::T_EXPRESSION);
@@ -927,24 +881,25 @@ class Parser
                 $categoryName = new AST\Val($this->tokenizer->getValue(), 'CATEGORYNAME');
             }
 
-            $condition = new AST\LogicalCondition($groupName, $filteringSelector, $categoryName, $logical);
+            $condition = new AST\LogicalCondition($groupName, $filteringSelector, $categoryName);
 
             $group->conditions[] = $condition;
 
             $this->tokenizer->proceedSkip();
-
-            if($this->tokenizer->is(TokenDefinition::T_LOGICAL_OPERATOR))
-            {
-                $this->tokenizer->check(TokenDefinition::T_LOGICAL_OPERATOR, 'AND');
-
-                $logical = 'AND';
-            }
-            else
-            {
-                break;
-            }
         }
-        return $group;
+        elseif($this->tokenizer->is(TokenDefinition::T_LOGICAL_OPERATOR))
+        {
+            $this->tokenizer->check(TokenDefinition::T_LOGICAL_OPERATOR, 'AND');
+
+            $condition = $this->parseWithDataCategoryLogicalGroup();
+
+            if($condition->logical)
+            {
+                $this->throwError(sprintf('Unexpected "%s"', $condition->logical));
+            }
+            $condition->logical = 'AND';
+        }
+        return $condition;
     }
 
     /**
@@ -1019,6 +974,8 @@ class Parser
             }
         }
 
+        $this->checkEOQ();
+
         return new AST\GroupBy($fields, $funcname);
     }
 
@@ -1029,7 +986,73 @@ class Parser
     {
         $this->enterScope(static::SCOPE_HAVING);
 
-        return $this->parseHavingLogicalGroup();
+        $having = $this->parseHavingLogicalGroup();
+
+        $this->checkEOQ();
+
+        return $having;
+    }
+
+    /**
+     * @return $integer
+     */
+    public function parseLimit()
+    {
+        $this->tokenizer->expect(TokenDefinition::T_NUMBER);
+
+        $limit = $this->tokenizer->getValue();
+
+        $this->tokenizer->proceedSkip();
+
+        $this->checkEOQ();
+
+        return $limit;
+    }
+
+    /**
+     * @return int
+     */
+    public function parseOffset()
+    {
+        $this->tokenizer->expect(TokenDefinition::T_NUMBER);
+
+        $offset = $this->tokenizer->getValue();
+
+        $this->tokenizer->proceedSkip();
+
+        $this->checkEOQ();
+
+        return $offset;
+    }
+
+    /**
+     * @return string
+     */
+    public function parseFor()
+    {
+        $this->tokenizer->expectKeyword(array('VIEW', 'REFERENCE'));
+
+        $for = $this->tokenizer->getValue();
+
+        $this->tokenizer->proceedSkip();
+
+        $this->checkEOQ();
+
+        return $for;
+    }
+
+    /**
+     * @return string
+     */
+    public function parseUpdate()
+    {
+        $this->tokenizer->expectKeyword('VIEWSTAT');
+
+        $value = $this->tokenizer->getValue();
+
+        $this->tokenizer->proceedSkip();
+
+        return $value;
     }
 
     /**
@@ -1091,6 +1114,9 @@ class Parser
                 break;
             }
         }
+
+        $this->checkEOQ();
+
         return $retVal;
     }
 
@@ -1143,5 +1169,35 @@ class Parser
     public function getTokenizer()
     {
         return $this->tokenizer;
+    }
+
+    private function checkEOQ()
+    {
+        if($this->isSubquery)
+        {
+            $this->tokenizer->check(array(
+                TokenDefinition::T_KEYWORD,
+                TokenDefinition::T_RIGHT_PAREN
+            ));
+        }
+        else
+        {
+            $this->tokenizer->check(array(
+                TokenDefinition::T_KEYWORD,
+                TokenDefinition::T_EOQ
+            ));
+        }
+    }
+
+    private function checkVeryEnd()
+    {
+        if($this->isSubquery)
+        {
+            $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
+        }
+        else
+        {
+            $this->tokenizer->check(TokenDefinition::T_EOQ);
+        }
     }
 }

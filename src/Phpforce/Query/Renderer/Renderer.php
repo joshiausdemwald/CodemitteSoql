@@ -49,6 +49,8 @@ class Renderer
 
         $this->renderWith($query->with);
 
+        $this->renderWithDataCategory($query->withDataCategory);
+
         $this->renderHaving($query->having);
 
         $this->renderGroupBy($query->groupBy);
@@ -227,7 +229,7 @@ class Renderer
     }
 
     /**
-     * @param With $with
+     * @param AST\With $with
      */
     public function renderWith(AST\With $with = null)
     {
@@ -239,6 +241,18 @@ class Renderer
     }
 
     /**
+     * @param AST\WithDataCategory $with
+     */
+    public function renderWithDataCategory(AST\WithDataCategory $withDataCategory = null)
+    {
+        if(null === $withDataCategory) return;
+
+        $this->output .= ' WITH DATA CATEGORY ';
+
+        $this->renderLogicalGroup($withDataCategory->logicalGroup);
+    }
+
+    /**
      * @param LogicalGroup $group
      */
     public function renderLogicalGroup(AST\LogicalUnit $unit)
@@ -246,6 +260,12 @@ class Renderer
         if($unit->logical)
         {
             $this->output .= $unit->logical . ' ';
+        }
+
+        // REMOVE PARENTHESIS FROM FIRST LEVEL
+        elseif($unit instanceof AST\LogicalGroup)
+        {
+            $unit = $unit->firstChild;
         }
 
         if($unit instanceof AST\LogicalGroup)
