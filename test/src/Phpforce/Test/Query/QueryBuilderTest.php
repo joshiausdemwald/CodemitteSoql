@@ -86,6 +86,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
                 ->select('Id, GROUPING(Name)')
                 ->from('Account a')
                 ->groupby('Id, Name')
+                ->limit(1)
                 /*->where
                     ('NOT fjord1 = 4')
                     ->andCondition('(NOT Dings = 3) AND (NOT dings=5) AND (hans < 7 OR hans > 9)')
@@ -101,14 +102,14 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
                 ->end()*/
 
                 // ->end()
-/*                ->groupby('Dings, nbums')
+            //    ->groupby('Dings, nbums')
                 ->having('COUNT(id) > 10')
-                ->end()
-                ->offset(10)
-                ->orderBy('hans, COUNT(wurst)')
-                ->limit(3)
-                ->forReference()
-                ->forView()*/
+            /*              ->end()
+                          ->offset(10)
+                          ->orderBy('hans, COUNT(wurst)')
+                          ->limit(3)
+                          ->forReference()
+                          ->forView()*/
         ;
 
 

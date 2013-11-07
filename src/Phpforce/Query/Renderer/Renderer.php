@@ -51,9 +51,9 @@ class Renderer
 
         $this->renderWithDataCategory($query->withDataCategory);
 
-        $this->renderHaving($query->having);
-
         $this->renderGroupBy($query->groupBy);
+
+        $this->renderHaving($query->having);
 
         $this->renderLimit($query->limit);
 

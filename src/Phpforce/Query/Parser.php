@@ -790,6 +790,177 @@ class Parser
     }
 
     /**
+     * @param string $parentLogical
+     *
+     * @return AST\LogicalUnit
+     */
+    public function parseHavingLogicalGroup()
+    {
+        $condition = null;
+
+        // SUB-GROUP
+        if($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
+        {
+            $condition = new AST\LogicalGroup();
+
+            $this->tokenizer->proceedSkip();
+
+            $condition->firstChild = $this->parseHavingLogicalGroup();
+
+            $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
+
+            $this->tokenizer->proceedSkip();
+
+            $condition->next = $this->parseWhereLogicalGroup();
+        }
+
+        // Condition, [followed by "AND"/"OR" condition]
+        elseif($this->tokenizer->is(TokenDefinition::T_EXPRESSION))
+        {
+            $right      = null;
+
+            $op         = null;
+
+            $left       = null;
+
+            $value = $this->tokenizer->getValue();
+
+            $this->tokenizer->proceedSkip();
+
+            if($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
+            {
+                $left = $this->parseFunction($value);
+            }
+            else
+            {
+                $left = new AST\Field($value);
+            }
+
+            // OPERATOR [including NOT IN]
+            if($this->tokenizer->is(TokenDefinition::T_LOGICAL_OPERATOR))
+            {
+                $this->tokenizer->check(TokenDefinition::T_LOGICAL_OPERATOR, 'NOT');
+
+                $this->tokenizer->proceedSkip();
+
+                $this->tokenizer->check(TokenDefinition::T_OPERATOR, 'IN');
+
+                $operator = 'NOT IN';
+            }
+            else
+            {
+                $this->tokenizer->check(TokenDefinition::T_OPERATOR, array(
+                    '=', '!=', '>=', '<=', '<', '>', 'IN', 'INCLUDES', 'EXCLUDES', 'LIKE'
+                ));
+                $operator = $this->tokenizer->getValue();
+            }
+
+            // DOUBLE CHECK OPERATOR
+            if(in_array($operator, array('IN', 'INCLUDES', 'EXCLUDES')))
+            {
+                $this->tokenizer->expect(array(
+                    TokenDefinition::T_VARIABLE,
+                    TokenDefinition::T_LEFT_PAREN
+                ));
+            }
+            else
+            {
+                $this->tokenizer->expect(array(
+                    TokenDefinition::T_DATETIME_FORMAT,
+                    TokenDefinition::T_DATE_FORMAT,
+                    TokenDefinition::T_DATE_LITERAL,
+                    TokenDefinition::T_STRING,
+                    TokenDefinition::T_VARIABLE,
+                    TokenDefinition::T_NUMBER,
+                    TokenDefinition::T_FLOAT,
+                    TokenDefinition::T_CURRENCY_NUMBER,
+                    TokenDefinition::T_NULL,
+                    TokenDefinition::T_FALSE,
+                    TokenDefinition::T_TRUE
+                ));
+            }
+
+            // RIGHT PART, COMPLEX VALUE
+            if($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
+            {
+                $this->tokenizer->expect(array(
+                    TokenDefinition::T_DATETIME_FORMAT,
+                    TokenDefinition::T_KEYWORD,
+                    TokenDefinition::T_DATE_FORMAT,
+                    TokenDefinition::T_DATE_LITERAL,
+                    TokenDefinition::T_STRING,
+                    TokenDefinition::T_VARIABLE,
+                    TokenDefinition::T_NUMBER,
+                    TokenDefinition::T_FLOAT,
+                    TokenDefinition::T_CURRENCY_NUMBER,
+                    TokenDefinition::T_NULL,
+                    TokenDefinition::T_FALSE,
+                    TokenDefinition::T_TRUE
+                ));
+
+                $list = array();
+
+                while(true)
+                {
+                    $this->tokenizer->proceedSkip();
+
+                    if( ! $this->tokenizer->is(TokenDefinition::T_COMMA))
+                    {
+                        break;
+                    }
+
+                    $this->tokenizer->proceedSkip();
+
+                    $list[] = new AST\Val($this->tokenizer->getValue(), $this->tokenizer->getName());
+                }
+                $right = new AST\Val($list, 'LIST');
+
+                $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
+            }
+            else
+            {
+                $this->tokenizer->check(array(
+                    TokenDefinition::T_DATETIME_FORMAT,
+                    TokenDefinition::T_KEYWORD,
+                    TokenDefinition::T_DATE_FORMAT,
+                    TokenDefinition::T_DATE_LITERAL,
+                    TokenDefinition::T_STRING,
+                    TokenDefinition::T_VARIABLE,
+                    TokenDefinition::T_NUMBER,
+                    TokenDefinition::T_FLOAT,
+                    TokenDefinition::T_CURRENCY_NUMBER,
+                    TokenDefinition::T_NULL,
+                    TokenDefinition::T_FALSE,
+                    TokenDefinition::T_TRUE
+                ));
+                $right = new AST\Val($this->tokenizer->getValue(), $this->tokenizer->getName());
+            }
+            $condition = new AST\LogicalCondition($left, $operator, $right);
+
+            $this->tokenizer->proceedSkip();
+
+            $condition->next = $this->parseHavingLogicalGroup();
+        }
+
+        // WEITER GEHT's, VERKNÜPFUNG MIT "AND" o.Ä.
+        elseif($this->tokenizer->is(TokenDefinition::T_LOGICAL_OPERATOR))
+        {
+            $logical              = $this->tokenizer->getValue();
+
+            $this->tokenizer->proceedSkip();
+
+            $condition            = $this->parseHavingLogicalGroup();
+
+            if($condition->logical)
+            {
+                $this->throwError(sprintf('Unexpected "%s"', $condition->logical));
+            }
+            $condition->logical   = $logical;
+        }
+        return $condition;
+    }
+
+    /**
      * Example: WITH UserId='005D0000001AamR'
      *          Only equal sign operator allowed.
      *          No logical operators allowed
@@ -985,6 +1156,8 @@ class Parser
     public function parseHaving()
     {
         $this->enterScope(static::SCOPE_HAVING);
+
+        $this->tokenizer->proceedSkip();
 
         $having = $this->parseHavingLogicalGroup();
 
