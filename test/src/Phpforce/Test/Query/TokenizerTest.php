@@ -1,7 +1,9 @@
 <?php
 namespace Phpforce\Test\Query;
 
+use Doctrine\Common\Cache\ArrayCache;
 use Phpforce\Query\AST\LogicalGroup;
+use Phpforce\Query\AST\LogicalCondition;
 use Phpforce\Query\AST\Query;
 use Phpforce\Query\AST\Val;
 use Phpforce\Query\AST\Where;
@@ -23,7 +25,7 @@ class TokenizerTest extends \PHPUnit_Framework_TestCase
 {
     public function newParser()
     {
-        return new Parser(new Tokenizer(new EventDispatcher()), new FilesystemCache(__DIR__ . '/../../../../cache/', 'query'));
+        return new Parser(new Tokenizer(new EventDispatcher()), new ArrayCache(__DIR__ . '/../../../../cache/', 'query'));
     }
 
     protected function setUp()
@@ -64,8 +66,6 @@ WHERE
  hans IN :pungpung AND
     PING__c>=1 AND
     Date__c = LAST_N_DAYS:90
-    FOR VIEW
-    UPDATE VIEWSTAT
 
 WITH DATA CATEGORY Geography__c ABOVE usa__c AND
     Product__c ABOVE_OR_BELOW mobile_phones__c AND
@@ -76,6 +76,7 @@ WITH DATA CATEGORY Geography__c ABOVE usa__c AND
  ORDER BY hanswi__c DESC NULLS LAST, pupsi__c ASC NULLS FIRST, dingsda
 
  LIMIT 3 OFFSET 5 FOR VIEW
+    UPDATE VIEWSTAT
                       ");
 
         $renderer = new Renderer();
@@ -247,16 +248,12 @@ WHERE Id IN
         $this->assertInstanceOf(Where::class, $wherePart);
         $logicalGroup1 = $ast->where->logicalGroup;
         $this->assertInstanceOf(LogicalGroup::class, $logicalGroup1);
-        $conditions1 = $logicalGroup1->conditions;
-        $this->assertCount(1, $conditions1);
-        $logicalGroup11 = $conditions1[0];
-        $this->assertInstanceOf(LogicalGroup::class, $logicalGroup11);
-        $this->assertCount(1, $logicalGroup11->conditions);
-        $condition11 = $logicalGroup11->conditions[0];
-        $this->assertInstanceOf(Field::class, $condition11->left);
-        $this->assertEquals('IN', $condition11->operator);
-        $this->assertInstanceOf(Val::class, $condition11->right);
-        $this->assertInstanceOf(Query::class, $condition11->right->value);
+        $condition1 = $logicalGroup1->firstChild;
+        $this->assertInstanceOf(LogicalCondition::class, $condition1);
+        $this->assertInstanceOf(Field::class, $condition1->left);
+        $this->assertEquals('IN', $condition1->operator);
+        $this->assertInstanceOf(Val::class, $condition1->right);
+        $this->assertInstanceOf(Query::class, $condition1->right->value);
         // AST INTEGRITY OF THE WHERE PART SEEMS TO BE VALID
 
         $this->newParser()->parse("SELECT Id, Name
@@ -556,7 +553,7 @@ HAVING MAX(Amount) > 10000");
         );
 
         $client = $builder
-            ->withCache(new FilesystemCache(__DIR__ . '/../../../../cache/', 'metadata'))
+            ->withCache(new ArrayCache(__DIR__ . '/../../../../cache/', 'metadata'))
             ->withLog(new Logger('phpforce'))
             ->build()
         ;

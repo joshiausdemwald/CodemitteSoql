@@ -874,7 +874,6 @@ class Tokenizer implements TokenizerInterface
         {
             throw new TokenizerException(sprintf('Parse error! Unexpected %s %s with value "%s" (expected T_KEYWORD "%s").', $this->type, $this->name, $this->value, $name), $this);
         }
-
         return $this;
     }
 

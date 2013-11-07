@@ -5,14 +5,14 @@ namespace Phpforce\Query\AST;
 class Having extends Node
 {
     /**
-     * @var LogicalGroup
+     * @var LogicalUnit
      */
     public $logicalGroup;
 
     /**
-     * @param LogicalGroup $group
+     * @param LogicalUnit $group
      */
-    public function __construct(LogicalGroup $group)
+    public function __construct(LogicalUnit $group)
     {
         $this->logicalGroup = $group;
     }

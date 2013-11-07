@@ -103,6 +103,8 @@ class Parser
         {
             $this->tokenizer->tokenize($soql);
 
+            $this->tokenizer->proceedSkip();
+
             $this->query = $this->parseQuery();
 
             $this->cache->save($id, $this->query);
@@ -130,7 +132,7 @@ class Parser
 
         if($this->tokenizer->isKeyword('WITH') && ($with = $this->parseWith()))
         {
-            $query->with = new AST\With($this->parseWith());
+            $query->with = new AST\With($with);
         }
 
         elseif($this->tokenizer->isKeyword('DATA'))
@@ -191,7 +193,7 @@ class Parser
      */
     public function parseSelect()
     {
-        $this->tokenizer->expectKeyword('SELECT');
+        $this->tokenizer->checkKeyword('SELECT');
 
         return new AST\Select($this->parseSelectFieldList());
     }
@@ -263,6 +265,8 @@ class Parser
         // SUBQUERY
         elseif($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
         {
+            $this->tokenizer->proceedSkip();
+
             return $this->parseSubquery();
         }
         else
@@ -626,7 +630,7 @@ class Parser
 
             $condition->firstChild = $this->parseWhereLogicalGroup();
 
-            $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
+            $this->tokenizer->check(array(TokenDefinition::T_RIGHT_PAREN, TokenDefinition::T_EOQ));
 
             $this->tokenizer->proceedSkip();
 
@@ -675,7 +679,7 @@ class Parser
             }
 
             // DOUBLE CHECK OPERATOR
-            if(in_array($operator, array('IN', 'INCLUDES', 'EXCLUDES')))
+            if(in_array($operator, array('IN', 'INCLUDES', 'EXCLUDES', 'NOT IN')))
             {
                 $this->tokenizer->expect(array(
                     TokenDefinition::T_VARIABLE,
@@ -713,7 +717,6 @@ class Parser
                 {
                     $this->tokenizer->check(array(
                         TokenDefinition::T_DATETIME_FORMAT,
-                        TokenDefinition::T_KEYWORD,
                         TokenDefinition::T_DATE_FORMAT,
                         TokenDefinition::T_DATE_LITERAL,
                         TokenDefinition::T_STRING,
@@ -750,7 +753,6 @@ class Parser
             {
                 $this->tokenizer->check(array(
                     TokenDefinition::T_DATETIME_FORMAT,
-                    TokenDefinition::T_KEYWORD,
                     TokenDefinition::T_DATE_FORMAT,
                     TokenDefinition::T_DATE_LITERAL,
                     TokenDefinition::T_STRING,
@@ -811,7 +813,7 @@ class Parser
 
             $this->tokenizer->proceedSkip();
 
-            $condition->next = $this->parseWhereLogicalGroup();
+            $condition->next = $this->parseHavingLogicalGroup();
         }
 
         // Condition, [followed by "AND"/"OR" condition]
@@ -1005,6 +1007,8 @@ class Parser
      */
     public function parseWithDataCategoryLogicalGroup()
     {
+        $condition = null;
+
         if($this->tokenizer->is(TokenDefinition::T_EXPRESSION))
         {
             // dataCategoryGroupName
@@ -1051,16 +1055,17 @@ class Parser
 
                 $categoryName = new AST\Val($this->tokenizer->getValue(), 'CATEGORYNAME');
             }
-
             $condition = new AST\LogicalCondition($groupName, $filteringSelector, $categoryName);
 
-            $group->conditions[] = $condition;
-
             $this->tokenizer->proceedSkip();
+
+            $condition->next = $this->parseWithDataCategoryLogicalGroup();
         }
         elseif($this->tokenizer->is(TokenDefinition::T_LOGICAL_OPERATOR))
         {
             $this->tokenizer->check(TokenDefinition::T_LOGICAL_OPERATOR, 'AND');
+
+            $this->tokenizer->proceedSkip();
 
             $condition = $this->parseWithDataCategoryLogicalGroup();
 
@@ -1243,6 +1248,7 @@ class Parser
 
             $value = $this->tokenizer->getValue();
 
+
             $this->tokenizer->proceedSkip();
 
             $field = null;
@@ -1260,9 +1266,7 @@ class Parser
 
             $nulls = null; // first/last
 
-            if(
-                $this->tokenizer->is(TokenDefinition::T_KEYWORD) &&
-                in_array($this->tokenizer->getName(), array('DESC', 'ASC')))
+            if($this->tokenizer->isKeyword('DESC') || $this->tokenizer->isKeyword('ASC'))
             {
                 $sort = $this->tokenizer->getName();
 

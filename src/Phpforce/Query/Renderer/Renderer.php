@@ -65,7 +65,7 @@ class Renderer
     }
 
     /**
-     * @param array $fieldsn
+     * @param AST\Select $select
      */
     public function renderSelect(AST\Select $select)
     {
@@ -110,21 +110,33 @@ class Renderer
     {
         $fields = (array)$fields;
 
-        if(count($fields) > 1)
+        for($i = 0; $len = count($fields), $i < $len; $i++)
         {
-            for($i = 0; $len = count($fields), $i < $len; $i++)
-            {
-                $this->renderField($fields[$i]);
+            $field = $fields[$i];
 
-                if($i < $len -1)
-                {
-                    $this->output .= ', ';
-                }
+            if($field instanceof AST\Field)
+            {
+                $this->renderField($field);
             }
-        }
-        else
-        {
-            $this->renderField($fields[0]);
+            elseif($field instanceof AST\Query)
+            {
+                $this->output .= '(';
+                $this->renderQuery($field);
+                $this->output .= ')';
+            }
+            elseif($field instanceof AST\Typeof)
+            {
+                $this->renderTypeof($field);
+            }
+            elseif($field instanceof AST\SoqlFunction)
+            {
+                $this->renderFunction($field);
+            }
+
+            if($i < $len -1)
+            {
+                $this->output .= ', ';
+            }
         }
     }
 
@@ -379,7 +391,6 @@ class Renderer
         {
             $this->output .= $groupBy->type;
         }
-
         $this->renderFields($groupBy->fields);
     }
 
@@ -428,7 +439,8 @@ class Renderer
         {
             return $this->variables[$key];
         }
-        throw new \InvalidArgumentException(sprintf('Variable with key "%s" was never bound to the query.', $key));
+        //throw new \InvalidArgumentException(sprintf('Variable with key "%s" was never bound to the query.', $key));
+        return null;
     }
 
     /**
