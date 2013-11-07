@@ -1,6 +1,7 @@
 <?php
 namespace Phpforce\Test\Query;
 
+use Doctrine\Common\Cache\ArrayCache;
 use Monolog\Logger;
 use Doctrine\Common\Cache\FilesystemCache;
 use Phpforce\Query\Builder\QueryBuilder;
@@ -19,7 +20,8 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
      */
     public function newParser()
     {
-        return new Parser(new Tokenizer(new EventDispatcher()), new FilesystemCache(__DIR__ . '/../../../../cache/', 'query'));
+        //return new Parser(new Tokenizer(new EventDispatcher()), new FilesystemCache(__DIR__ . '/../../../../cache/', 'query'));
+        return new Parser(new Tokenizer(new EventDispatcher()), new ArrayCache());
     }
 
     /**
@@ -35,7 +37,8 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
         );
 
         return $builder
-            ->withCache(new FilesystemCache(__DIR__ . '/../../../../cache/', 'metadata'))
+            //->withCache(new FilesystemCache(__DIR__ . '/../../../../cache/', 'metadata'))
+            ->withCache(new ArrayCache())
             ->withLog(new Logger('phpforce'))
             ->build()
         ;
@@ -80,30 +83,31 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
         $queryBuilder
             ->prepareStatement()
-                ->select('Id, dings, (select dingsbums from account limit 1)')
+                ->select('Id, GROUPING(trallala), dings, (select dingsbums from account limit 1)')
                 ->addSelect('TYPEOF Account WHEN dings THEN bums END')
                 ->addSelect('dingsbums')
                 ->addSelect('kloing')
                 ->from('Account a')
                 ->where
-                    ('Dings > 3')
+                    ('NOT fjord1 = 4')
+                    ->andCondition('(NOT Dings = 3) AND (NOT dings=5) AND (hans < 7 OR hans > 9)')
                     ->andCondition('fond = 1')
-                ->end()
-                ->with
-                    ('DATA CATEGORY hans ABOVE usa__c')
-                    ->andCondition('dings1 = "bums1"')
-                    ->andGroup()
-                        ->condition('DINGS2 = "bums2"')
+                    ->andGroup
+                        ('ping = "pong"')
+                        ->orCondition('ding = "tong"')
                     ->endGroup()
                 ->end()
-                ->groupby('Dings, nbums')
+                // ->with('dings1 = "bums"')
+
+                // ->end()
+/*                ->groupby('Dings, nbums')
                 ->having('COUNT(id) > 10')
                 ->end()
                 ->offset(10)
                 ->orderBy('hans, COUNT(wurst)')
                 ->limit(3)
                 ->forReference()
-                ->forView()
+                ->forView()*/
         ;
 
 

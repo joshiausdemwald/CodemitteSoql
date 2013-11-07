@@ -10,9 +10,9 @@ class Where extends Node
     public $logicalGroup;
 
     /**
-     * @param LogicalGroup $group
+     * @param LogicalUnit $group
      */
-    public function __construct(LogicalGroup $group)
+    public function __construct(LogicalUnit $group)
     {
         $this->logicalGroup = $group;
     }

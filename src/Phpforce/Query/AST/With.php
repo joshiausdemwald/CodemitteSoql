@@ -10,9 +10,8 @@ class With extends Node
     public $logicalGroup;
 
     /**
-     * @param string $what
-     *
      * @param LogicalGroup $group
+     * @param string $type
      */
     public function __construct(LogicalGroup $group)
     {

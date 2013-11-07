@@ -1,46 +1,34 @@
 <?php
 namespace Phpforce\Query\AST;
 
-
-use Codemitte\ForceToolkit\Soql\AST\Functions;
-
-class LogicalCondition extends Node
+class LogicalCondition extends LogicalUnit
 {
     /**
-     * For instance "DATA CATEGORY"
-     *
-     * @var string $type
-     */
-    public $type;
-
-    /**
-     * @var Functions\SoqlFunction|string
+     * @var SoqlFunction|string
      */
     public $left;
 
+    /**
+     * @var string
+     */
     public $operator;
 
+    /**
+     * @var mixed
+     */
     public $right;
-
-    public $logical;
 
     /**
      * @param SoqlFunction|string $left
      * @param string operator
      * @param mixed $right
-     * @param string|null $logical
-     * @param string|null $type
      */
-    public function __construct($left, $operator, $right, $logical = null, $type = null)
+    public function __construct($left, $operator, $right)
     {
         $this->left     = $left;
 
         $this->operator = $operator;
 
         $this->right    = $right;
-
-        $this->logical  = $logical;
-
-        $this->type     = $type;
     }
 } 

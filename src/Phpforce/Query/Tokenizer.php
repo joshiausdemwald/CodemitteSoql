@@ -16,7 +16,7 @@ class Tokenizer implements TokenizerInterface
     private static $LOGICAL_OPERATORS = array('AND', 'OR', 'NOT');
 
     private static $EXPRESSION_OPERATORS = array(
-        'INCLUDES', 'LIKE', 'IN', 'EXCLUDES',  // WHERE
+        'INCLUDES', 'LIKE', 'IN', /*'NOT IN', */'EXCLUDES',  // WHERE
         'AT', 'ABOVE', 'BELOW', 'ABOVE_OR_BELOW'); // WITH
 
 
@@ -683,6 +683,9 @@ class Tokenizer implements TokenizerInterface
         }
     }
 
+    /**
+     * @throws TokenizerException
+     */
     private function tokenizeExpression()
     {
         static $dynamicDateLiteralPattern = null;

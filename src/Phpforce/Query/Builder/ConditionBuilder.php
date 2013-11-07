@@ -22,46 +22,51 @@ class ConditionBuilder
     private $method;
 
     /**
-     * @var AST\LogicalGroup
+     * @var AST\LogicalUnit
      */
     private $ast;
 
     /**
-     * @param QueryBuilder $queryBuilder
-     * @param string $method
-     * @param ConditionBuilder|null $parent
-     * @param string|null $class
+     * @var AST\LogicalGroup
      */
-    public function __construct(QueryBuilder $queryBuilder, AST\LogicalGroup $ast, array $method, ConditionBuilder $parent = null, $class = null)
+    private $root;
+
+    /**
+     * @var string
+     */
+    private $logical;
+
+    /**
+     * @param QueryBuilder          $queryBuilder
+     * @param callable              $method
+     * @param ConditionBuilder      $parent
+     * @param string|null           $logical
+     */
+    public function __construct(QueryBuilder $queryBuilder, array $method, ConditionBuilder $parent = null, $logical = null)
     {
         $this->queryBuilder = $queryBuilder;
 
-        $this->ast          = $ast;
+        $this->method       = $method;
 
-        $this->method = $method;
+        $this->parent       = $parent;
 
-        $this->parent = $parent;
+        $this->logical      = $logical;
+
+        $this->root         = $this->ast = new AST\LogicalGroup();
+
+        $this->root->logical = $logical;
     }
 
     /**
+     * @param string    $soql
+     * @param string    $logical
+     *
      * @return ConditionBuilder
      */
-    public function condition($soql, $logical = null)
+    public function condition($soql)
     {
-        $this->queryBuilder->getParser()->setSoql($soql);
+        $this->ast = $this->root->firstChild = $this->buildCondition($soql);
 
-        $group = \call_user_func($this->method);
-
-        if(null === $logical)
-        {
-            $this->ast->conditions = $group->conditions;
-        }
-        else
-        {
-            $group->logical = $logical;
-
-            $this->ast->conditions[] = $group;
-        }
         return $this;
     }
 
@@ -72,7 +77,9 @@ class ConditionBuilder
      */
     public function andCondition($soql)
     {
-        return $this->condition($soql, 'AND');
+        $this->ast = $this->ast->next = $this->buildCondition($soql, 'AND');
+
+        return $this;
     }
 
     /**
@@ -82,33 +89,95 @@ class ConditionBuilder
      */
     public function orCondition($soql)
     {
-        return $this->condition($soql, 'OR');
+        $this->ast = $this->ast->next = $this->buildCondition($soql, 'OR');
+
+        return $this;
+    }
+
+    /**
+     * @param $soql
+     *
+     * @return ConditionBuilder
+     */
+    public function notCondition($soql)
+    {
+        $this->ast = $this->ast->next = $this->buildCondition($soql, 'NOT');
+
+        return $this;
+    }
+
+    /**
+     * @param string $soql
+     * @param string|null $logical
+     *
+     * @return LogicalUnit
+     */
+    private function buildCondition($soql, $logical = null)
+    {
+        $this->queryBuilder->getParser()->setSoql($soql);
+        $unit = \call_user_func($this->method);
+
+        // e.g. "NOT"-PRÄFIX
+        if($logical && $unit->logical)
+        {
+            $group = new AST\LogicalGroup();
+            $group->firstChild = $unit;
+            $unit = $group;
+        }
+        $unit->logical = $logical;
+
+        return $unit;
+    }
+
+    /**
+     * @param  string $logical
+     *
+     * @return ConditionBuilder
+     */
+    public function group($soql = null)
+    {
+        return $this->getChildBuilder($soql);
     }
 
     /**
      * @return ConditionBuilder
      */
-    public function group($logical = null)
+    public function andGroup($soql = null)
     {
-        $childBuilder = new ConditionBuilder($this->queryBuilder, new AST\LogicalGroup($logical), $this->method, $this);
-
-        return $childBuilder;
+        return $this->getChildBuilder($soql, 'AND');
     }
 
     /**
      * @return ConditionBuilder
      */
-    public function andGroup()
+    public function orGroup($soql = null)
     {
-        return $this->group('AND');
+        return $this->getChildBuilder($soql, 'OR');
     }
 
     /**
      * @return ConditionBuilder
      */
-    public function orGroup()
+    public function notGroup($soql = null)
     {
-        return $this->group('OR');
+        return $this->getChildBuilder($soql, 'NOT');
+    }
+
+    /**
+     * @param string|null   $soql
+     * @param string|null   $logical
+     *
+     * @return ConditionBuilder
+     */
+    private function getChildBuilder($soql = null, $logical = null)
+    {
+        $builder = new ConditionBuilder($this->queryBuilder, $this->method, $this, $logical);
+
+        if($soql)
+        {
+            $builder->condition($soql);
+        }
+        return $builder;
     }
 
     /**
@@ -116,7 +185,7 @@ class ConditionBuilder
      */
     public function endGroup()
     {
-        $this->parent->ast->conditions[] = $this->ast;
+        $this->parent->ast = $this->parent->ast->next = $this->root;
 
         return $this->parent;
     }
@@ -127,5 +196,13 @@ class ConditionBuilder
     public function end()
     {
         return $this->queryBuilder;
+    }
+
+    /**
+     * @return AST\LogicalUnit
+     */
+    public function getAST()
+    {
+        return $this->root;
     }
 }

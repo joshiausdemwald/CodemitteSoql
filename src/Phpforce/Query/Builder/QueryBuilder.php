@@ -99,9 +99,9 @@ class QueryBuilder
      */
     public function where($soql = null)
     {
-        $this->ast->where = new AST\Where($group = new AST\LogicalGroup());
+        $conditionBuilder = new ConditionBuilder($this, array($this->getParser(), 'parseWhere'));
 
-        $conditionBuilder = new ConditionBuilder($this, $group, array($this->getParser(), 'parseWhere'), null);
+        $this->ast->where = new AST\Where($conditionBuilder->getAST());
 
         if($soql)
         {
@@ -118,9 +118,27 @@ class QueryBuilder
      */
     public function with($soql = null)
     {
-        $this->ast->with = new AST\With($group = new AST\LogicalGroup());
+        $conditionBuilder = new ConditionBuilder($this, array($this->getParser(), 'parseWith'));
 
-        $conditionBuilder = new ConditionBuilder($this, $group, array($this->getParser(), 'parseWith'), null);
+        $this->ast->with = new AST\With($conditionBuilder->getAST());
+
+        if($soql)
+        {
+            $conditionBuilder->condition($soql);
+        }
+        return $conditionBuilder;
+    }
+
+    /**
+     * @param string $soql
+     *
+     * @return ConditionBuilder
+     */
+    public function withDataCategory($soql = null)
+    {
+        $conditionBuilder = new ConditionBuilder($this, array($this->getParser(), 'parseWithDataCategory'));
+
+        $this->ast->with = new AST\With($conditionBuilder->getAST());
 
         if($soql)
         {
@@ -148,9 +166,9 @@ class QueryBuilder
      */
     public function having($soql = null)
     {
-        $this->ast->having = new AST\Having($group = new AST\LogicalGroup());
+        $conditionBuilder = new ConditionBuilder($this, array($this->getParser(), 'parseHaving'));
 
-        $conditionBuilder = new ConditionBuilder($this, $group, array($this->getParser(), 'parseHaving'), null);
+        $this->ast->having = new AST\Having($conditionBuilder->getAST());
 
         if($soql)
         {

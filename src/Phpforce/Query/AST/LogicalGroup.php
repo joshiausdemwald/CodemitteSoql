@@ -1,23 +1,15 @@
 <?php
 namespace Phpforce\Query\AST;
 
-class LogicalGroup extends Node
+class LogicalGroup extends LogicalUnit
 {
     /**
-     * @var null|string
+     * @var string
      */
-    public $logical;
+    public $type;
 
     /**
-     * @var LogicalCondition[]
+     * @var LogicalUnit
      */
-    public $conditions = array();
-
-    /**
-     * @param string $logical
-     */
-    public function __construct($logical = null)
-    {
-        $this->logical = $logical;
-    }
-} 
+    public $firstChild;
+}

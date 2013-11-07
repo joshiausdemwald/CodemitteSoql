@@ -241,34 +241,35 @@ class Renderer
     /**
      * @param LogicalGroup $group
      */
-    public function renderLogicalGroup(AST\LogicalGroup $group)
+    public function renderLogicalGroup(AST\LogicalUnit $unit)
     {
-        foreach($group->conditions AS $condition)
+        if($unit->logical)
         {
-            if($condition->logical)
-            {
-                $this->output .= ' ' . $condition->logical . ' ';
-            }
+            $this->output .= $unit->logical . ' ';
+        }
 
-            if($condition instanceof AST\LogicalGroup)
-            {
-                $this->output .= '(';
-                $this->renderLogicalGroup($condition);
-                $this->output .= ')';
-            }
-            else
-            {
-                if($condition->type)
-                {
-                    $this->output .= ' ' . $condition->type . ' ';
-                }
+        if($unit instanceof AST\LogicalGroup)
+        {
+            $this->output .= '(';
 
-                $this->renderLeftOperand($condition->left);
+            $this->renderLogicalGroup($unit->firstChild);
 
-                $this->output .= ' ' . $condition->operator . ' ';
+            $this->output .= ')';
+        }
+        else
+        {
+            $this->renderLeftOperand($unit->left);
 
-                $this->renderRightOperand($condition->right);
-            }
+            $this->output .= ' ' . $unit->operator . ' ';
+
+            $this->renderRightOperand($unit->right);
+        }
+
+        if($unit->next)
+        {
+            $this->output .= ' ';
+
+            $this->renderLogicalGroup($unit->next);
         }
     }
 
