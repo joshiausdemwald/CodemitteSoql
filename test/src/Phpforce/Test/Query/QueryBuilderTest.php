@@ -2,12 +2,12 @@
 namespace Phpforce\Test\Query;
 
 use Doctrine\Common\Cache\ArrayCache;
-use Monolog\Logger;
 use Doctrine\Common\Cache\FilesystemCache;
+use Monolog\Logger;
 use Phpforce\Query\Builder\QueryBuilder;
 use Phpforce\Query\Renderer\Renderer;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Phpforce\SoapClient\ClientBuilder;
+use Phpforce\SoapClient\ClientFactory;
 use Phpforce\SoapClient\Soap\WSDL\Wsdl;
 use Phpforce\Query\Parser;
 use Phpforce\Query\Tokenizer;
@@ -29,18 +29,18 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
      */
     public function newClient()
     {
-        $builder = new ClientBuilder(
+        $clientFactory = new ClientFactory(
             $wsdl = new Wsdl(__DIR__ . '/../../../../fixtures/partner.wsdl.xml'),
             SF_USERNAME,
             SF_PASSWORD,
             SF_SECURITY_TOKEN
         );
 
-        return $builder
+        return $clientFactory
             //->withCache(new FilesystemCache(__DIR__ . '/../../../../cache/', 'metadata'))
             ->withCache(new ArrayCache())
             ->withLog(new Logger('phpforce'))
-            ->build()
+            ->getInstance()
         ;
     }
 
@@ -81,13 +81,16 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
             ->end() ConditionBuilder
         ->end() QueryBuilder*/
 
-        $queryBuilder
+        $builder = $queryBuilder
             ->prepareStatement()
-                ->select('Id, GROUPING(Name)')
+                ->select('Id, Name')
                 ->from('Account a')
-                ->groupby('Id, Name')
-                ->limit(1)
-                /*->where
+                ->limit(1);
+
+        $result = $builder->query();
+
+        print_r($result->first()); exit;
+                /* ->where
                     ('NOT fjord1 = 4')
                     ->andCondition('(NOT Dings = 3) AND (NOT dings=5) AND (hans < 7 OR hans > 9)')
                     ->andCondition('fond = 1')
@@ -103,7 +106,7 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
 
                 // ->end()
             //    ->groupby('Dings, nbums')
-                ->having('COUNT(id) > 10')
+
             /*              ->end()
                           ->offset(10)
                           ->orderBy('hans, COUNT(wurst)')
@@ -111,9 +114,5 @@ class QueryBuilderTest extends \PHPUnit_Framework_TestCase
                           ->forReference()
                           ->forView()*/
         ;
-
-
-        print_r($queryBuilder->getAst());
-        print_r($queryBuilder->execute());
     }
 } 

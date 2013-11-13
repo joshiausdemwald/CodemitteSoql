@@ -2,8 +2,6 @@
 namespace Phpforce\Query;
 
 use Phpforce\Query\AST as AST;
-use Doctrine\Common\Cache\Cache;
-use Symfony\Component\Yaml\Exception\ParseException;
 
 class Parser
 {
@@ -34,23 +32,10 @@ class Parser
     private static $availableFunctions;
 
     /**
-     * @var bool
-     */
-    private $isSubquery = false;
-
-    /**
-     * @var Cache
-     */
-    private $cache;
-
-    /**
      * @param \Phpforce\Query\TokenizerInterface $tokenizer
-     * @param Cache $cache
      */
-    public function __construct(TokenizerInterface $tokenizer, Cache $cache)
+    public function __construct(TokenizerInterface $tokenizer)
     {
-        $this->cache = $cache;
-
         $this->tokenizer = $tokenizer;
 
         static::$availableFunctions = array
@@ -88,36 +73,13 @@ class Parser
     }
 
     /**
-     * @param $soql
-     * @return AST\Node|AST\Query|null
-     */
-    public function parse($soql)
-    {
-        $id = hash('sha1', $soql);
-
-        if($this->cache->contains($id))
-        {
-            $this->query = $this->cache->fetch($id);
-        }
-        else
-        {
-            $this->tokenizer->tokenize($soql);
-
-            $this->tokenizer->proceedSkip();
-
-            $this->query = $this->parseQuery();
-
-            $this->cache->save($id, $this->query);
-        }
-        return $this->query;
-    }
-
-    /**
      * @return AST\Query
      */
     public function parseQuery()
     {
         $query = new AST\Query();
+
+        $this->tokenizer->expectKeyword('SELECT');
 
         $query->select = $this->parseSelect();
 
@@ -193,7 +155,9 @@ class Parser
      */
     public function parseSelect()
     {
-        $this->tokenizer->checkKeyword('SELECT');
+        $this->enterScope(static::SCOPE_SELECT);
+
+        $this->tokenizer->proceedSkip();
 
         return new AST\Select($this->parseSelectFieldList());
     }
@@ -203,8 +167,6 @@ class Parser
      */
     public function parseSelectFieldList()
     {
-        $this->enterScope(static::SCOPE_SELECT);
-
         $fields = array();
 
         $withCount = false;
@@ -234,6 +196,8 @@ class Parser
             {
                 break;
             }
+
+            $this->tokenizer->proceedSkip();
         }
         return $fields;
     }
@@ -248,8 +212,6 @@ class Parser
      */
     public function parseSelectField()
     {
-        $this->tokenizer->proceedSkip();
-
         // SINGLE FIELD
         if($this->tokenizer->is(TokenDefinition::T_EXPRESSION))
         {
@@ -265,8 +227,6 @@ class Parser
         // SUBQUERY
         elseif($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
         {
-            $this->tokenizer->proceedSkip();
-
             return $this->parseSubquery();
         }
         else
@@ -280,21 +240,12 @@ class Parser
      */
     public function parseSubquery()
     {
-        if($this->isSubquery)
-        {
-            $this->throwError('Multi-level subqueries are not allowed.');
-        }
-
         if($this->scope === static::SCOPE_HAVING)
         {
             $this->throwError('No subquery filters allowed in HAVING clause');
         }
 
-        $this->isSubquery = true;
-
         $query = $this->parseQuery();
-
-        $this->isSubquery = false;
 
         $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
 
@@ -681,7 +632,8 @@ class Parser
             // DOUBLE CHECK OPERATOR
             if(in_array($operator, array('IN', 'INCLUDES', 'EXCLUDES', 'NOT IN')))
             {
-                $this->tokenizer->expect(array(
+                $this->tokenizer->expect(array
+                (
                     TokenDefinition::T_VARIABLE,
                     TokenDefinition::T_LEFT_PAREN
                 ));
@@ -706,14 +658,12 @@ class Parser
             // RIGHT PART, COMPLEX VALUE OR SUBQUERY FIRST
             if($this->tokenizer->is(TokenDefinition::T_LEFT_PAREN))
             {
-                $this->tokenizer->proceedSkip();
-
-                // SUBQUERY
-                if($this->tokenizer->isKeyword('SELECT'))
+                try
                 {
+                    // parse subquery "expects" SELECT
                     $right = new AST\Val($this->parseSubquery(), 'SUBQUERY');
                 }
-                else
+                catch(TokenizerException $e)
                 {
                     $this->tokenizer->check(array(
                         TokenDefinition::T_DATETIME_FORMAT,
@@ -1311,8 +1261,6 @@ class Parser
      */
     public function setSoql($soql)
     {
-        $this->isSubquery = false;
-
         $this->tokenizer->tokenize($soql);
     }
 
@@ -1350,31 +1298,15 @@ class Parser
 
     private function checkEOQ()
     {
-        if($this->isSubquery)
-        {
-            $this->tokenizer->check(array(
-                TokenDefinition::T_KEYWORD,
-                TokenDefinition::T_RIGHT_PAREN
-            ));
-        }
-        else
-        {
-            $this->tokenizer->check(array(
-                TokenDefinition::T_KEYWORD,
-                TokenDefinition::T_EOQ
-            ));
-        }
+        $this->tokenizer->check(array(
+            TokenDefinition::T_KEYWORD,
+            TokenDefinition::T_EOQ,
+            TokenDefinition::T_RIGHT_PAREN
+        ));
     }
 
     private function checkVeryEnd()
     {
-        if($this->isSubquery)
-        {
-            $this->tokenizer->check(TokenDefinition::T_RIGHT_PAREN);
-        }
-        else
-        {
-            $this->tokenizer->check(TokenDefinition::T_EOQ);
-        }
+        $this->tokenizer->check(array(TokenDefinition::T_RIGHT_PAREN, TokenDefinition::T_EOQ));
     }
 }

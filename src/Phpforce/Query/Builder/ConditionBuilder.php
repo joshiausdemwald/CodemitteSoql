@@ -2,7 +2,6 @@
 namespace Phpforce\Query\Builder;
 
 use Phpforce\Query\AST;
-use Phpforce\Query\Parser;
 
 class ConditionBuilder
 {

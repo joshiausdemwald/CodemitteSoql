@@ -1,10 +1,8 @@
 <?php
 namespace Phpforce\Query\Renderer;
 
-
 use Phpforce\Query\AST;
 use Phpforce\Query\Builder\Type;
-use Phpforce\Query\TokenDefinition;
 
 class Renderer
 {
@@ -439,8 +437,7 @@ class Renderer
         {
             return $this->variables[$key];
         }
-        //throw new \InvalidArgumentException(sprintf('Variable with key "%s" was never bound to the query.', $key));
-        return null;
+        throw new \InvalidArgumentException(sprintf('Variable with key "%s" was never bound to the query.', $key));
     }
 
     /**

@@ -1,7 +1,6 @@
 <?php
 namespace Phpforce\Query;
 
-use Phpforce\Query\Event\TokenMatchEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -827,6 +826,7 @@ class Tokenizer implements TokenizerInterface
     /**
      * @param string $type
      * @param string|null $name
+     *
      * @return bool
      */
     public function expect($type, $name = null)
